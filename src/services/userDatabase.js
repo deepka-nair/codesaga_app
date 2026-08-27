@@ -16,7 +16,7 @@ import {
 } from './apiService';
 
 export function getApiUrl() {
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  return import.meta.env.VITE_API_BASE_URL || 'https://codesaga-app-2.onrender.com';
 }
 
 export function normalizeEmail(email) {

@@ -1,4 +1,4 @@
-import ExcelJS from '../selenium-tests/node_modules/exceljs/excel.js';
+import ExcelJS from 'exceljs';
 import path from 'path';
 import fileSystem from 'fs';
 import { fileURLToPath } from 'url';

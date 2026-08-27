@@ -15,18 +15,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: 1. Checkout Repository Source Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js Environment
+      - name: 2. Setup Node.js Environment (v20)
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
-      - name: Detect Backend Technology Stack
+      - name: 3. Detect Backend Technology Stack
         id: detect-tech
         run: |
           echo "Detecting application backend technology..."
@@ -39,21 +39,23 @@ jobs:
             echo "TECH_STACK=Python (Django/Flask/FastAPI)" >> $GITHUB_ENV
           fi
 
-      - name: Run Gitleaks Secret Detection Scan
-        name: Secret Detection (Gitleaks)
+      - name: 4. Install Application Dependencies
+        run: npm ci || npm install
+
+      - name: 5. Run Gitleaks Secret Detection Scan
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Run Semgrep SAST Analysis
+      - name: 6. Run Semgrep SAST Analysis
         run: |
-          python3 -m pip install semgrep
+          python3 -m pip install --upgrade pip semgrep --break-system-packages || python3 -m pip install semgrep || true
           semgrep scan --config p/security-audit --json --output semgrep-results.json || true
         continue-on-error: true
 
-      - name: Run Trivy Filesystem Vulnerability Scan
-        uses: aquasecurity/trivy-action@master
+      - name: 7. Run Trivy Filesystem Vulnerability Scan
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -62,16 +64,16 @@ jobs:
           severity: 'CRITICAL,HIGH,MEDIUM,LOW'
         continue-on-error: true
 
-      - name: Run Node Dependency Security Audit
+      - name: 8. Run Node Dependency Security Audit
         run: |
           npm audit --json > npm-audit-results.json || true
 
-      - name: Generate Security & Excel Reports
+      - name: 9. Generate Security & Excel Reports
         run: |
-          cd selenium-tests && (npm ci || npm install) && cd ..
           node scripts/generate-security-excel-report.js || true
 
-      - name: Upload Security Reports & Excel Artifacts
+      - name: 10. Upload Security Reports & Excel Artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-vulnerability-test-reports

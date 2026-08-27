@@ -11,12 +11,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "cors": "^2.8.5",
     "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
     "dotenv": "^16.6.1",
+    "exceljs": "^4.4.0",
     "express": "^5.1.0",
-    "mongoose": "^8.18.0",
     "lucide-react": "^1.33.0",
+    "mongoose": "^8.18.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",

@@ -22,6 +22,11 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - name: 2b. Setup Chrome for Headless Selenium WebDriver
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
       - name: 3. Install Application Dependencies (Root & Test Suites)
         run: |
           echo "Installing root application dependencies..."
@@ -70,11 +75,13 @@ jobs:
           node scripts/generate-security-excel-report.js
 
       - name: 9. Bundle All 4 Excel Reports into test-reports/ Directory
+        if: always()
         run: |
           echo "Bundling generated Excel test reports..."
           node scripts/prepare-test-reports.js
 
       - name: 10. Upload Combined Artifact (all-4-test-excel-reports-bundle)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: all-4-test-excel-reports-bundle
@@ -82,6 +89,7 @@ jobs:
           retention-days: 90
 
       - name: 11. Upload Individual Artifact - Selenium Web Excel Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: selenium-web-e2e-report-excel
@@ -89,6 +97,7 @@ jobs:
           retention-days: 30
 
       - name: 12. Upload Individual Artifact - Appium Mobile Excel Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: appium-mobile-e2e-report-excel
@@ -96,6 +105,7 @@ jobs:
           retention-days: 30
 
       - name: 13. Upload Individual Artifact - API Load Test Excel Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: api-load-test-report-excel
@@ -103,6 +113,7 @@ jobs:
           retention-days: 30
 
       - name: 14. Upload Individual Artifact - Security Review Excel Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-review-report-excel

@@ -24,15 +24,19 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - name: Setup Chrome for Headless Selenium WebDriver
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
       - name: Install Application Dependencies
         run: npm ci || npm install
 
       - name: Start CodeSaga Application in Background
         run: |
-          npm run build || true
           node server.js &
           npm run dev &
-          sleep 5
+          npx wait-on -t 30000 http-get://localhost:5000/api/health http-get://localhost:5173
 
       - name: Install Selenium Test Dependencies
         working-directory: ./selenium-tests
@@ -43,6 +47,7 @@ jobs:
         run: npm test
 
       - name: Upload Selenium Excel Test Report Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: selenium-web-e2e-report-excel
@@ -74,6 +79,7 @@ jobs:
         run: npm test
 
       - name: Upload Appium Excel Test Report Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: appium-mobile-e2e-report-excel
@@ -112,6 +118,7 @@ jobs:
         run: node scripts/generate-excel-report.js
 
       - name: Upload API Load Test Excel Report Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: api-load-test-report-excel
@@ -140,6 +147,7 @@ jobs:
         run: node scripts/generate-security-excel-report.js
 
       - name: Upload Security Audit Excel Report Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: devsecops-security-review-report-excel
@@ -152,6 +160,7 @@ jobs:
   consolidated-reports-bundle:
     name: 📦 Download All 4 Test Excel Reports Bundle
     needs: [selenium-web-e2e, appium-mobile-e2e, api-baseline-load-test, devsecops-security-audit]
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code
@@ -170,10 +179,10 @@ jobs:
           node load-tests/scripts/generate-excel-report.js || true
           node scripts/generate-security-excel-report.js || true
           
-          cp selenium-tests/Login_Test_Cases_Report.xlsx all-excel-reports/1_Selenium_Web_E2E_Test_Report.xlsx
-          cp appium-tests/Appium_Test_Cases_Report.xlsx all-excel-reports/2_Appium_Mobile_E2E_Test_Report.xlsx
-          cp load-tests/Baseline_Load_Test_Report.xlsx all-excel-reports/3_API_Baseline_Load_Test_Report.xlsx
-          cp "Vulnerability Test Results/Security_Review_Report.xlsx" all-excel-reports/4_DevSecOps_Security_Review_Report.xlsx
+          cp selenium-tests/Login_Test_Cases_Report.xlsx all-excel-reports/1_Selenium_Web_E2E_Test_Report.xlsx || true
+          cp appium-tests/Appium_Test_Cases_Report.xlsx all-excel-reports/2_Appium_Mobile_E2E_Test_Report.xlsx || true
+          cp load-tests/Baseline_Load_Test_Report.xlsx all-excel-reports/3_API_Baseline_Load_Test_Report.xlsx || true
+          cp "Vulnerability Test Results/Security_Review_Report.xlsx" all-excel-reports/4_DevSecOps_Security_Review_Report.xlsx || true
 
       - name: Upload All 4 Excel Reports Bundle Artifact
         uses: actions/upload-artifact@v4

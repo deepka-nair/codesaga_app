@@ -1,0 +1,14 @@
+{
+  "name": "codesaga-load-tests",
+  "version": "1.0.0",
+  "description": "Baseline Load & Stress Testing Suite for CodeSaga API (100 Concurrent Virtual Users / 60s)",
+  "main": "baseline-load-test.js",
+  "type": "module",
+  "scripts": {
+    "test:load": "node baseline-load-test.js",
+    "start-server-and-test": "node start-and-test.js"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  }
+}

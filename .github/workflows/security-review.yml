@@ -1,0 +1,84 @@
+name: Security Review & DevSecOps Automation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    name: 🛡️ Defensive SAST & Security Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Detect Backend Technology Stack
+        id: detect-tech
+        run: |
+          echo "Detecting application backend technology..."
+          if [ -f "package.json" ]; then
+            echo "TECH_STACK=Node.js / Express" >> $GITHUB_ENV
+            echo "Framework: Node.js / Express"
+          elif [ -f "pom.xml" ] || [ -f "build.gradle" ]; then
+            echo "TECH_STACK=Java Spring Boot" >> $GITHUB_ENV
+          elif [ -f "requirements.txt" ] || [ -f "Pipfile" ]; then
+            echo "TECH_STACK=Python (Django/Flask/FastAPI)" >> $GITHUB_ENV
+          fi
+
+      - name: Run Gitleaks Secret Detection Scan
+        name: Secret Detection (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Run Semgrep SAST Analysis
+        run: |
+          python3 -m pip install semgrep
+          semgrep scan --config p/security-audit --json --output semgrep-results.json || true
+        continue-on-error: true
+
+      - name: Run Trivy Filesystem Vulnerability Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          output: 'trivy-fs-report.txt'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+        continue-on-error: true
+
+      - name: Run Node Dependency Security Audit
+        run: |
+          npm audit --json > npm-audit-results.json || true
+
+      - name: Generate Security & Excel Reports
+        run: |
+          cd selenium-tests && (npm ci || npm install) && cd ..
+          node scripts/generate-security-excel-report.js || true
+
+      - name: Upload Security Reports & Excel Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-vulnerability-test-reports
+          path: |
+            Vulnerability Test Results/
+            Vulnerability Test Results/Security_Review_Report.xlsx
+            semgrep-results.json
+            npm-audit-results.json
+            trivy-fs-report.txt
+          retention-days: 30

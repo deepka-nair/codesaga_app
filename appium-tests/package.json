@@ -1,0 +1,20 @@
+{
+  "name": "codesaga-appium-tests",
+  "version": "1.0.0",
+  "description": "Appium Mobile E2E Automation Test Suite & Test Management Report for CodeSaga Mobile Frontend",
+  "main": "tests/appium-e2e-tests.js",
+  "type": "module",
+  "scripts": {
+    "test": "mocha tests/appium-e2e-tests.js --timeout 90000",
+    "generate-report": "node scripts/generate-excel-report.js"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "webdriverio": "^9.10.0"
+  },
+  "devDependencies": {
+    "appium": "^2.16.0",
+    "chai": "^5.2.0",
+    "mocha": "^11.1.0"
+  }
+}

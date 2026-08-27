@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build & Output
+dist/
+build/
+
+# Local Environment Variables & Logs
+.env
+*.log
+
+# Temp directory
+scratch/

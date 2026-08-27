@@ -5,7 +5,7 @@
  * Never connects React/Vite directly to MongoDB and never exposes credentials.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://codesaga-app-2.onrender.com';
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 

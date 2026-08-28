@@ -12,3 +12,8 @@ build/
 
 # Temp directory
 scratch/
+.gradle/
+**/android/.gradle/
+**/android/build/
+**/android/app/build/
+

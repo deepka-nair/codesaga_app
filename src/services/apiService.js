@@ -10,6 +10,24 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://codesaga-app-
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
 /**
+ * Resilient fetch helper with automatic retry for server cold starts (Render/MongoDB)
+ */
+async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 1500) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
+      return res;
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      await new Promise((r) => setTimeout(r, delayMs * (i + 1)));
+    }
+  }
+}
+
+/**
  * Fetch user account from MongoDB via Express API
  */
 export async function getUserFromApi(email) {
@@ -19,7 +37,7 @@ export async function getUserFromApi(email) {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}`);
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}`);
     if (!res.ok) {
       throw new Error(`API responded with status ${res.status}`);
     }
@@ -41,7 +59,7 @@ export async function registerUserInApi(email, username, role = 'user', password
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/users`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: cleanEmail, username, role, password })
@@ -67,7 +85,7 @@ export async function loginWithPasswordApi(email, password) {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/users/login-password`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/login-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: cleanEmail, password })
@@ -88,7 +106,7 @@ export async function loginWithPasswordApi(email, password) {
     return data;
   } catch (error) {
     console.error('Error in loginWithPasswordApi:', error);
-    return { success: false, offline: true, message: 'Unable to connect to CodeSaga. Please try again.' };
+    return { success: false, offline: true, message: 'Unable to connect to CodeSaga backend. Please try again.' };
   }
 }
 
@@ -102,7 +120,7 @@ export async function setPasswordApi(email, password) {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/users/set-password`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/set-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: cleanEmail, password })
@@ -114,7 +132,7 @@ export async function setPasswordApi(email, password) {
     return data;
   } catch (error) {
     console.error('Error in setPasswordApi:', error);
-    return { success: false, offline: true, message: 'Unable to connect to CodeSaga. Please try again.' };
+    return { success: false, offline: true, message: 'Unable to connect to CodeSaga backend. Please try again.' };
   }
 }
 
@@ -128,7 +146,7 @@ export async function recordUserLoginInApi(email) {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/users/login`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: cleanEmail })
@@ -153,7 +171,7 @@ export async function getUserProgressFromApi(email) {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/progress`);
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/progress`);
     if (!res.ok) {
       throw new Error(`API responded with status ${res.status}`);
     }
@@ -174,7 +192,7 @@ export async function saveUserProgressToApi(email, progressData) {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/progress`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/progress`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(progressData)
@@ -242,7 +260,7 @@ export async function saveCertificateToApi(email, certPayload) {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/certificate`, {
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/certificate`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(certPayload)

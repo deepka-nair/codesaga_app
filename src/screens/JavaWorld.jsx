@@ -172,8 +172,33 @@ const JavaWorld = () => {
   const isDev = isDeveloper(useStore.getState().user);
   const isGuest = isGuestUser(useStore.getState());
 
-  const isCurrentChapterLocked = !isDev && !isGuest && activeChapterId > 1 && !javaCompletedChapters.includes(activeChapterId - 1);
+  const isGuestChapterLocked = isGuest && activeChapterId > 1;
+  const isCurrentChapterLocked = !isDev && (isGuestChapterLocked || (activeChapterId > 1 && !javaCompletedChapters.includes(activeChapterId - 1)));
   const isCurrentMissionLocked = !isDev && !isGuest && activeMissionIndex > 0 && !completedMissions.includes(activeChapter.missions[activeMissionIndex - 1]?.id);
+
+  if (isGuestChapterLocked) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#0E2526', padding: '4rem 1.5rem', textAlign: 'center', color: '#F6F4EB' }}>
+        <PixelPanel style={{ maxWidth: '600px', margin: '0 auto', borderTop: '4px solid #f59e0b', backgroundColor: '#173536' }}>
+          <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '1rem' }}>🔒</span>
+          <h2 style={{ color: '#f59e0b', fontFamily: 'var(--font-pixel)', fontSize: '1.4rem', marginBottom: '0.75rem' }}>
+            GUEST PREVIEW LIMIT
+          </h2>
+          <p style={{ color: '#A8B8B4', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+            Chapters 2+ are locked for Guest sessions. Create a free detective account or log in to unlock all 12 Java chapters, earn certificates, and save your progress to the cloud!
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <GameButton onClick={() => navigate('/login')} variant="gold">
+              CREATE ACCOUNT / LOGIN 🔑
+            </GameButton>
+            <GameButton onClick={() => { setActiveChapterId(1); setActiveMissionIndex(0); }} variant="secondary">
+              RETURN TO CHAPTER 1 📜
+            </GameButton>
+          </div>
+        </PixelPanel>
+      </div>
+    );
+  }
 
   if (isCurrentChapterLocked || isCurrentMissionLocked) {
     const isChapLock = isCurrentChapterLocked;
@@ -201,7 +226,7 @@ const JavaWorld = () => {
               } else {
                 setActiveMissionIndex(getResumedMissionIndex(activeChapter));
               }
-            }} 
+            }}
             variant="gold"
           >
             {isChapLock ? 'RETURN TO UNLOCKED CHAPTER ☕' : 'RETURN TO UNLOCKED MISSION 🎯'}

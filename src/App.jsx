@@ -14,6 +14,7 @@ import JavaWorld from './screens/JavaWorld';
 import FrontendWorld from './screens/FrontendWorld';
 import CppWorld from './screens/CppWorld';
 import BackendWorld from './screens/BackendWorld';
+import WebAppShell from './components/WebAppShell';
 
 import { getUserFromApi } from './services/apiService';
 import { normalizeEmail } from './services/accountService';
@@ -70,7 +71,7 @@ function App() {
   }, []);
 
   return (
-    <div className="app-container">
+    <WebAppShell>
       {/* Non-blocking sync warning banner */}
       {syncError && (
         <div style={{
@@ -209,7 +210,7 @@ function App() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/worlds" replace />} />
       </Routes>
-    </div>
+    </WebAppShell>
   );
 }
 

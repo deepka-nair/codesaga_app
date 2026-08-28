@@ -1,5 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Press+Start+2P&display=swap');
 @import './styles/cursors.css';
+
+@font-face {
+  font-family: 'Press Start 2P';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/PressStart2P-Regular.ttf') format('truetype'),
+       url('https://fonts.gstatic.com/s/pressstart2p/v16/e3t4euO8T-267oIAQAu6jDQyK0nS.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/Outfit-Regular.ttf') format('truetype'),
+       url('https://fonts.gstatic.com/s/outfit/v15/QGYyz_MVcBeNP4NjuGObqx1XmO1I4TC1C4E.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Outfit-Bold.ttf') format('truetype'),
+       url('https://fonts.gstatic.com/s/outfit/v15/QGYyz_MVcBeNP4NjuGObqx1XmO1I4deyC4E.ttf') format('truetype');
+}
 
 :root {
   /* Color Palette */
@@ -108,3 +134,203 @@ button {
   border-radius: var(--radius-lg);
   padding: 0.5rem 1rem;
 }
+
+/* Web App Shell Layout (Full SPA Web Application Experience) */
+html, body, #root {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.webapp-shell {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0a0e17 75%);
+  overflow: hidden;
+}
+
+/* Web App Glassmorphism Header */
+.webapp-header {
+  height: 64px;
+  background: rgba(17, 24, 39, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 2px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}
+
+.webapp-logo-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.webapp-logo-title {
+  font-family: var(--font-pixel);
+  font-size: 1rem;
+  color: var(--accent-gold);
+  text-shadow: 2px 2px 0 #000;
+}
+
+.webapp-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(20, 184, 166, 0.15);
+  border: 1px solid var(--accent-teal);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  font-family: var(--font-pixel);
+  color: var(--accent-teal);
+}
+
+.webapp-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-teal);
+  box-shadow: 0 0 8px var(--accent-teal);
+  animation: pulseDot 1.5s infinite;
+}
+
+@keyframes pulseDot {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+/* Web App Nav Tabs */
+.webapp-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.webapp-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.webapp-tab-btn:hover {
+  background: #1e293b;
+  color: var(--text-primary);
+  border-color: #334155;
+}
+
+.webapp-tab-btn.active {
+  background: #1e293b;
+  color: var(--accent-teal);
+  border-color: var(--accent-teal);
+  box-shadow: 0 0 10px rgba(20, 184, 166, 0.2);
+}
+
+/* Web App Content Viewport */
+.webapp-viewport {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  overscroll-behavior: contain;
+  padding-bottom: 75px;
+}
+
+.webapp-viewport::-webkit-scrollbar {
+  width: 6px;
+}
+.webapp-viewport::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+.webapp-viewport::-webkit-scrollbar-thumb {
+  background: var(--accent-teal);
+  border-radius: 3px;
+}
+
+/* Floating Bottom Dock Navigation */
+.webapp-bottom-dock {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(17, 24, 39, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 2px solid #334155;
+  border-radius: 16px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 999;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.webapp-dock-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-pixel);
+  font-size: 0.6rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.webapp-dock-btn:hover {
+  background: #1e293b;
+  color: var(--text-primary);
+}
+
+.webapp-dock-btn.active {
+  background: #1e293b;
+  color: var(--accent-teal);
+  border-color: var(--accent-teal);
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.3);
+}
+
+/* Mobile Responsiveness for Web App Shell */
+@media (max-width: 900px) {
+  .webapp-nav-tabs {
+    display: none;
+  }
+  .webapp-header {
+    padding: 0 0.75rem;
+  }
+}
+
+

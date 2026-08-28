@@ -360,10 +360,14 @@ const Login = () => {
       }} />
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '440px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ color: 'var(--accent-gold)', marginBottom: '0.5rem', fontSize: '2.8rem', textShadow: '3px 3px 0 #000' }}>CodeSaga</h1>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <img 
+            src="/assets/codesaga-logo-web.png" 
+            alt="CodeSaga" 
+            style={{ maxHeight: '70px', maxWidth: '100%', objectFit: 'contain', marginBottom: '0.5rem' }} 
+          />
           <p style={{ fontFamily: 'var(--font-pixel)', fontSize: '0.75rem', color: 'var(--accent-teal)', textShadow: '1px 1px 0 #000' }}>
-            Retro RPG Programming & Detective Quests
+            Interactive Programming & RPG Detective Quests
           </p>
         </div>
 

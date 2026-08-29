@@ -12,7 +12,7 @@ import pythonEngine from '../services/pythonEngine';
 import audioManager from '../services/audioManager';
 import useStore from '../store/useStore';
 import { isDeveloper } from '../utils/userRole';
-import { isGuestUser } from '../utils/guestPreview';
+import { isGuestUser, GUEST_PREVIEW_LIMITS } from '../utils/guestPreview';
 
 const PythonWorld = () => {
   const navigate = useNavigate();
@@ -62,6 +62,13 @@ const PythonWorld = () => {
   }, [activeMissionIndex, activeChapterId, currentMission.id, completedMissions]);
 
   const handleSelectChapter = (chId) => {
+    if ((isGuest && chId > 1) || (!isDev && chId > 1 && !pyCompletedChapters.includes(chId - 1))) {
+      audioManager.playDisabled();
+      if (isGuest && chId > 1) {
+        setShowGuestUnlockModal(true);
+      }
+      return;
+    }
     audioManager.playTabSwitch();
     setActiveChapterId(chId);
     const targetCh = getPythonChapterById(chId);
@@ -89,8 +96,12 @@ const PythonWorld = () => {
 
       const isLastMission = activeMissionIndex === activeChapter.missions.length - 1;
       if (isLastMission) {
-        completeChapter(activeChapterId, 3);
-        setShowCompletionModal(true);
+        if (isGuest) {
+          setShowGuestUnlockModal(true);
+        } else {
+          completeChapter(activeChapterId, 3);
+          setShowCompletionModal(true);
+        }
       }
     } else {
       audioManager.playWrongSql();
@@ -117,8 +128,12 @@ const PythonWorld = () => {
 
       const isLastMission = activeMissionIndex === activeChapter.missions.length - 1;
       if (isLastMission) {
-        completeChapter(activeChapterId, 3);
-        setShowCompletionModal(true);
+        if (isGuest) {
+          setShowGuestUnlockModal(true);
+        } else {
+          completeChapter(activeChapterId, 3);
+          setShowCompletionModal(true);
+        }
       }
     } else {
       audioManager.playError();
@@ -130,11 +145,20 @@ const PythonWorld = () => {
 
   const handleNextMission = () => {
     audioManager.playContinue();
+    if (isGuest && activeMissionIndex >= GUEST_PREVIEW_LIMITS.maxMissionsPerChapter - 1) {
+      setShowGuestUnlockModal(true);
+      return;
+    }
+
     if (activeMissionIndex < activeChapter.missions.length - 1) {
       const nextIdx = activeMissionIndex + 1;
       setActiveMissionIndex(nextIdx);
       updatePythonProgress(activeChapterId, nextIdx);
     } else {
+      if (isGuest) {
+        setShowGuestUnlockModal(true);
+        return;
+      }
       completeChapter(activeChapterId, 3);
       setShowCompletionModal(true);
     }
@@ -151,6 +175,10 @@ const PythonWorld = () => {
 
   const handleModalContinue = () => {
     setShowCompletionModal(false);
+    if (isGuest) {
+      setShowGuestUnlockModal(true);
+      return;
+    }
     const nextChapterId = activeChapterId + 1;
     if (nextChapterId <= 12) {
       setActiveChapterId(nextChapterId);
@@ -165,10 +193,11 @@ const PythonWorld = () => {
 
   const isDev = isDeveloper(useStore.getState().user);
   const isGuest = isGuestUser(useStore.getState());
+  const [showGuestUnlockModal, setShowGuestUnlockModal] = useState(false);
 
   const isGuestChapterLocked = isGuest && activeChapterId > 1;
   const isCurrentChapterLocked = !isDev && (isGuestChapterLocked || (activeChapterId > 1 && !pyCompletedChapters.includes(activeChapterId - 1)));
-  const isCurrentMissionLocked = !isDev && !isGuest && activeMissionIndex > 0 && !completedMissions.includes(activeChapter.missions[activeMissionIndex - 1]?.id);
+  const isCurrentMissionLocked = !isDev && (isGuest ? activeMissionIndex >= GUEST_PREVIEW_LIMITS.maxMissionsPerChapter : (activeMissionIndex > 0 && !completedMissions.includes(activeChapter.missions[activeMissionIndex - 1]?.id)));
 
   if (isGuestChapterLocked) {
     return (
@@ -477,6 +506,51 @@ const PythonWorld = () => {
               stars={3}
               onContinue={handleModalContinue}
             />
+          )}
+
+          {/* Guest Unlock Modal */}
+          {showGuestUnlockModal && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(10, 14, 23, 0.9)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 99999,
+              padding: '1.5rem'
+            }}>
+              <PixelPanel style={{ maxWidth: '520px', width: '100%', backgroundColor: '#1e293b', borderTop: '4px solid var(--accent-gold)', textAlign: 'center' }}>
+                <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '0.75rem' }}>🔐</span>
+                <h2 style={{ color: 'var(--accent-gold)', fontFamily: 'var(--font-pixel)', fontSize: '1.3rem', marginBottom: '0.75rem' }}>
+                  FULL CODESAGA EXPERIENCE
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                  You are currently exploring the <strong>Guest Preview Mode</strong>. Create your free account to unlock:
+                </p>
+
+                <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '8px', border: '1px solid #334155', textAlign: 'left', fontSize: '0.85rem', marginBottom: '1.5rem', color: '#f8fafc' }}>
+                  <div style={{ marginBottom: '0.4rem' }}>✓ Full Python & Multi-World Programming Chapters</div>
+                  <div style={{ marginBottom: '0.4rem' }}>✓ Complete Interactive Detective Missions</div>
+                  <div style={{ marginBottom: '0.4rem' }}>✓ XP, Levels & Daily Streaks</div>
+                  <div style={{ marginBottom: '0.4rem' }}>✓ Automatic Progress Saving to Database</div>
+                  <div>✓ Official Verified CodeSaga Certificate</div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <GameButton onClick={() => navigate('/login')} variant="gold">
+                    CREATE FREE ACCOUNT 🚀
+                  </GameButton>
+                  <GameButton onClick={() => setShowGuestUnlockModal(false)} variant="secondary">
+                    CONTINUE PREVIEW 👁️
+                  </GameButton>
+                </div>
+              </PixelPanel>
+            </div>
           )}
         </div>
       </div>

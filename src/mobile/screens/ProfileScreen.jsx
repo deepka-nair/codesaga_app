@@ -40,7 +40,7 @@ export default function ProfileScreen({ userState, initialTab = 'overview', onBa
   const [claiming, setClaiming] = useState(false);
 
   // GitHub state
-  const [githubUsername, setGithubUsername] = useState('deepka-nair');
+  const [githubUsername, setGithubUsername] = useState('');
   const [githubLoading, setGithubLoading] = useState(false);
 
   const activeChar = getCharacterById(character);

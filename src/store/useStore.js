@@ -326,7 +326,7 @@ const useStore = create(
         setLastActiveEmail(emailKey);
 
         const localState = loadLocalAccountProgress(emailKey) || {};
-        const isDev = emailKey === 'deepkav5008.sse@saveetha.com' || cloudProgress?.role === 'developer' || userData?.role === 'developer';
+        const isDev = emailKey === 'deepkanair8@gmail.com' || emailKey === 'deepkav5008.sse@saveetha.com' || cloudProgress?.role === 'developer' || userData?.role === 'developer';
         const roleVal = isDev ? 'developer' : (cloudProgress?.role || userData?.role || 'user');
 
         const userObj = {

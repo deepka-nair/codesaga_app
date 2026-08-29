@@ -58,7 +58,7 @@ const Profile = () => {
 
   const [activeTab, setActiveTab] = useState('overview');
 
-  const [githubInput, setGithubInput] = useState('deepka-nair');
+  const [githubInput, setGithubInput] = useState('');
   const [linkedinInput, setLinkedinInput] = useState('');
   const [githubLoading, setGithubLoading] = useState(false);
   const [githubLocalError, setGithubLocalError] = useState(null);
@@ -76,7 +76,7 @@ const Profile = () => {
     try {
       const profile = await fetchRealGithubProfile(githubInput);
       setGithubProfile(profile);
-      setGithubInput('deepka-nair');
+      setGithubInput('');
       audioManager.playSuccess();
     } catch (err) {
       setGithubLocalError(err.message);
@@ -93,8 +93,9 @@ const Profile = () => {
       return;
     }
 
+    const activeGhUser = githubProfile?.login || 'user';
     setGithubLoading(true);
-    setPublishStatus({ type: 'info', message: 'Creating repository deepka-nair/codesaga & committing project files... ⏳' });
+    setPublishStatus({ type: 'info', message: `Creating repository ${activeGhUser}/codesaga & committing project files... ⏳` });
     audioManager.playClick();
 
     try {
@@ -843,10 +844,10 @@ const Profile = () => {
                       {showPublishModal && (
                         <div style={{ backgroundColor: '#071516', border: '2px solid #E6A93D', padding: '1.25rem', borderRadius: '8px', marginBottom: '1.25rem' }}>
                           <h4 style={{ color: '#E6A93D', fontFamily: 'var(--font-pixel)', fontSize: '0.9rem', marginTop: 0, marginBottom: '0.5rem' }}>
-                            🚀 PUBLISH CODESAGA PROJECT TO GITHUB (@deepka-nair)
+                            🚀 PUBLISH CODESAGA PROJECT TO GITHUB ({githubProfile?.login ? `@${githubProfile.login}` : ''})
                           </h4>
                           <p style={{ fontSize: '0.8rem', color: '#A8B8B4', margin: '0 0 0.85rem 0', lineHeight: 1.4 }}>
-                            Enter your GitHub Personal Access Token (PAT) with <code style={{ color: '#38bdf8' }}>repo</code> scope to create repository <strong style={{ color: '#F6F4EB' }}>deepka-nair/codesaga</strong> and commit your project files. Note: <code style={{ color: '#ef4444' }}>.env</code> and private credentials are automatically excluded by <code style={{ color: '#38bdf8' }}>.gitignore</code>.
+                            Enter your GitHub Personal Access Token (PAT) with <code style={{ color: '#38bdf8' }}>repo</code> scope to create repository <strong style={{ color: '#F6F4EB' }}>{githubProfile?.login || 'username'}/codesaga</strong> and commit your project files. Note: <code style={{ color: '#ef4444' }}>.env</code> and private credentials are automatically excluded by <code style={{ color: '#38bdf8' }}>.gitignore</code>.
                           </p>
                           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
                             <input 

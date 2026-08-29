@@ -2,7 +2,12 @@
  * CodeSaga Role & Authorization Utility Module
  */
 
-export const DEVELOPER_EMAIL = "deepkav5008.sse@saveetha.com";
+export const DEVELOPER_EMAILS = [
+  "deepkanair8@gmail.com",
+  "deepkav5008.sse@saveetha.com"
+];
+
+export const DEVELOPER_EMAIL = "deepkanair8@gmail.com";
 
 /**
  * Check if the current user has Developer / Admin role
@@ -10,7 +15,7 @@ export const DEVELOPER_EMAIL = "deepkav5008.sse@saveetha.com";
 export function isDeveloper(userObj = null) {
   if (!userObj) return false;
   const cleanEmail = String(userObj.email || userObj.id || "").trim().toLowerCase();
-  return userObj.role === "developer" || cleanEmail === DEVELOPER_EMAIL;
+  return userObj.role === "developer" || DEVELOPER_EMAILS.includes(cleanEmail);
 }
 
 /**

@@ -48,8 +48,8 @@ const Login = () => {
   // Auth method: 'password' (default) or 'otp'
   const [authMethod, setAuthMethod] = useState('password');
 
-  // Step state: 'login', 'email', 'otp', 'username', or 'create_password'
-  const [step, setStep] = useState(hasReturningAccount ? 'login' : 'login');
+  // Step state: 'email' (default), 'password', 'otp', 'username', or 'create_password'
+  const [step, setStep] = useState('email');
   const [email, setEmail] = useState(savedLastEmail || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -144,7 +144,7 @@ const Login = () => {
     }
   };
 
-  // Step 1: Send Email OTP via EmailJS
+  // Step 1: Check Database & Send Email OTP or Prompt Password
   const handleSendOTP = async (e) => {
     if (e) e.preventDefault();
     setStatusMessage(null);
@@ -157,6 +157,22 @@ const Login = () => {
     }
 
     setLoading(true);
+    setStatusMessage({ type: 'info', text: 'Checking account... ⏳' });
+    audioManager.playClick();
+
+    // Check database to see if user exists and has a password
+    const dbRes = await getUserFromApi(cleanEmail);
+
+    if (dbRes.success && dbRes.exists && dbRes.hasPassword) {
+      setLoading(false);
+      audioManager.playSuccess();
+      setPendingExistingUser(dbRes.user);
+      setStep('password');
+      setStatusMessage({ type: 'info', text: `Welcome back! Enter your password for ${cleanEmail}.` });
+      return;
+    }
+
+    // New user or existing user without password -> Send OTP
     setStatusMessage({ type: 'info', text: 'Sending OTP... 📩 Dispatching EmailJS OTP' });
     audioManager.playNotification();
 

@@ -94,8 +94,9 @@ if (!MONGODB_URI || MONGODB_URI.includes('<db_password>')) {
     .then(() => {
       console.log('MongoDB connected successfully');
     })
-    .catch((err) => {
-      console.error('MongoDB connection failed:', err.message);
+   .catch((err) => {
+  console.error('MongoDB connection failed:', err);
+
     });
 }
 

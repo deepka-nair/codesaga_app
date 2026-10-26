@@ -9,6 +9,25 @@ const API_BASE_URL = 'https://codesaga-app-3.onrender.com';
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
+let activeAuthToken = null;
+
+export function setMobileAuthToken(token) {
+  activeAuthToken = token;
+}
+
+export function getMobileAuthToken() {
+  return activeAuthToken;
+}
+
+function getAuthHeaders(existingHeaders = {}) {
+  const headers = { ...existingHeaders };
+  const token = getMobileAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 /**
  * Resilient fetch helper with timeout and automatic retry logic
  */
@@ -68,6 +87,9 @@ export async function registerUserInApi(email, username, password = null) {
     if (!res.ok) {
       return { success: false, message: data.message || `Server error (${res.status})` };
     }
+    if (data.token) {
+      setMobileAuthToken(data.token);
+    }
     return data;
   } catch (error) {
     console.error('[Mobile API] registerUserInApi error:', error);
@@ -103,6 +125,9 @@ export async function loginWithPasswordApi(email, password) {
         requiresOtpSetup: Boolean(data.requiresOtpSetup)
       };
     }
+    if (data.token) {
+      setMobileAuthToken(data.token);
+    }
     return data;
   } catch (error) {
     console.error('[Mobile API] loginWithPasswordApi error:', error);
@@ -129,6 +154,9 @@ export async function setPasswordApi(email, password) {
     if (!res.ok) {
       return { success: false, message: data.message || 'Failed to save password.' };
     }
+    if (data.token) {
+      setMobileAuthToken(data.token);
+    }
     return data;
   } catch (error) {
     console.error('[Mobile API] setPasswordApi error:', error);
@@ -137,7 +165,30 @@ export async function setPasswordApi(email, password) {
 }
 
 /**
- * 5. GET USER PROGRESS — Retrieve progress snapshot from MongoDB Atlas
+ * 5. RECORD LOGIN — Update last login timestamp in MongoDB
+ */
+export async function recordLoginInApi(email) {
+  const cleanEmail = normalizeEmail(email);
+  if (!cleanEmail || cleanEmail.includes('guest_')) return { success: true };
+  try {
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cleanEmail })
+    });
+    if (!res.ok) return { success: false };
+    const data = await res.json();
+    if (data.token) {
+      setMobileAuthToken(data.token);
+    }
+    return data;
+  } catch (e) {
+    return { success: false };
+  }
+}
+
+/**
+ * 6. GET USER PROGRESS — Retrieve progress snapshot from MongoDB Atlas (authenticated & ownership protected)
  */
 export async function getUserProgressFromApi(email) {
   const cleanEmail = normalizeEmail(email);
@@ -146,7 +197,8 @@ export async function getUserProgressFromApi(email) {
   }
 
   try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/progress`);
+    const headers = getAuthHeaders();
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/progress`, { headers });
     if (!res.ok) {
       return { success: false, message: `Server error (${res.status})` };
     }
@@ -158,7 +210,7 @@ export async function getUserProgressFromApi(email) {
 }
 
 /**
- * 6. SAVE USER PROGRESS — Save full progress snapshot to MongoDB Atlas
+ * 7. SAVE USER PROGRESS — Save full progress snapshot to MongoDB Atlas (authenticated & ownership protected)
  */
 export async function saveUserProgressToApi(email, progressData) {
   const cleanEmail = normalizeEmail(email);
@@ -167,9 +219,10 @@ export async function saveUserProgressToApi(email, progressData) {
   }
 
   try {
+    const headers = getAuthHeaders({ 'Content-Type': 'application/json' });
     const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/progress`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(progressData)
     });
     if (!res.ok) {
@@ -183,7 +236,7 @@ export async function saveUserProgressToApi(email, progressData) {
 }
 
 /**
- * 7. SAVE CERTIFICATE — Save world or main certificate to MongoDB Atlas
+ * 8. SAVE CERTIFICATE — Save world or main certificate to MongoDB Atlas (authenticated & ownership protected)
  */
 export async function saveCertificateToApi(email, certPayload) {
   const cleanEmail = normalizeEmail(email);
@@ -192,9 +245,10 @@ export async function saveCertificateToApi(email, certPayload) {
   }
 
   try {
+    const headers = getAuthHeaders({ 'Content-Type': 'application/json' });
     const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/certificate`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(certPayload)
     });
     if (!res.ok) {

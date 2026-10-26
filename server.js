@@ -44,6 +44,20 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options(/(.*)/, cors(corsOptions));
 
+// HTTP Defensive Security Headers (Defends against clickjacking, MIME-sniffing, and insecure framing)
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '0');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://api.qrserver.com https://avatars.githubusercontent.com; connect-src 'self' http://localhost:* ws://localhost:* https://*.onrender.com https://api.github.com https://api.emailjs.com https://api.resend.com; frame-ancestors 'self' https://appassets.androidplatform.net;"
+  );
+  next();
+});
+
 app.use(express.json());
 
 // API Routes
@@ -74,13 +88,17 @@ app.use((req, res) => {
   });
 });
 
-// Global Error Handler
+// Global Error Handler (Sanitizes internal error messages in production)
 app.use((err, req, res, next) => {
-  console.error('[Server Error]:', err.message);
+  console.error('[Server Error]:', err.stack || err.message);
+  const isProduction = process.env.NODE_ENV === 'production';
+  const safeMessage = isProduction 
+    ? 'Internal Server Error. Please try again later.'
+    : (err.message || 'Internal Server Error');
   res.status(500).json({
     success: false,
-    error: err.message || 'Internal Server Error',
-    message: err.message || 'Internal Server Error'
+    error: safeMessage,
+    message: safeMessage
   });
 });
 
@@ -94,9 +112,8 @@ if (!MONGODB_URI || MONGODB_URI.includes('<db_password>')) {
     .then(() => {
       console.log('MongoDB connected successfully');
     })
-   .catch((err) => {
-  console.error('MongoDB connection failed:', err);
-
+    .catch((err) => {
+      console.error('MongoDB connection failed:', err.message);
     });
 }
 

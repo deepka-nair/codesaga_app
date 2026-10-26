@@ -9,6 +9,34 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://codesaga-app-
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
+let activeAuthToken = null;
+
+export function setAuthToken(token) {
+  activeAuthToken = token;
+  try {
+    if (token) localStorage.setItem('codesaga_auth_token', token);
+    else localStorage.removeItem('codesaga_auth_token');
+  } catch (e) {}
+}
+
+export function getAuthToken() {
+  if (!activeAuthToken) {
+    try {
+      activeAuthToken = localStorage.getItem('codesaga_auth_token');
+    } catch (e) {}
+  }
+  return activeAuthToken;
+}
+
+function getAuthHeaders(existingHeaders = {}) {
+  const headers = { ...existingHeaders };
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 /**
  * Resilient fetch helper with automatic retry for server cold starts (Render/MongoDB)
  */
@@ -68,6 +96,9 @@ export async function registerUserInApi(email, username, role = 'user', password
     if (!res.ok) {
       return { success: false, message: data.message || `Server error (${res.status})` };
     }
+    if (data.token) {
+      setAuthToken(data.token);
+    }
     return data;
   } catch (error) {
     console.error('Error in registerUserInApi:', error);
@@ -103,6 +134,9 @@ export async function loginWithPasswordApi(email, password) {
         requiresOtpSetup: Boolean(data.requiresOtpSetup)
       };
     }
+    if (data.token) {
+      setAuthToken(data.token);
+    }
     return data;
   } catch (error) {
     console.error('Error in loginWithPasswordApi:', error);
@@ -129,6 +163,9 @@ export async function setPasswordApi(email, password) {
     if (!res.ok) {
       return { success: false, message: data.message || 'Failed to save password.' };
     }
+    if (data.token) {
+      setAuthToken(data.token);
+    }
     return data;
   } catch (error) {
     console.error('Error in setPasswordApi:', error);
@@ -154,7 +191,11 @@ export async function recordUserLoginInApi(email) {
     if (!res.ok) {
       throw new Error(`API responded with status ${res.status}`);
     }
-    return await res.json();
+    const data = await res.json();
+    if (data.token) {
+      setAuthToken(data.token);
+    }
+    return data;
   } catch (error) {
     console.error('Error in recordUserLoginInApi:', error);
     return { success: false, offline: true, message: error.message };
@@ -162,7 +203,7 @@ export async function recordUserLoginInApi(email) {
 }
 
 /**
- * Fetch progress from MongoDB via Express API
+ * Fetch progress from MongoDB via Express API (authenticated & ownership protected)
  */
 export async function getUserProgressFromApi(email) {
   const cleanEmail = normalizeEmail(email);
@@ -171,7 +212,8 @@ export async function getUserProgressFromApi(email) {
   }
 
   try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/progress`);
+    const headers = getAuthHeaders();
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/progress`, { headers });
     if (!res.ok) {
       throw new Error(`API responded with status ${res.status}`);
     }
@@ -183,7 +225,7 @@ export async function getUserProgressFromApi(email) {
 }
 
 /**
- * Save user progress snapshot to MongoDB via Express API
+ * Save user progress snapshot to MongoDB via Express API (authenticated & ownership protected)
  */
 export async function saveUserProgressToApi(email, progressData) {
   const cleanEmail = normalizeEmail(email);
@@ -192,9 +234,10 @@ export async function saveUserProgressToApi(email, progressData) {
   }
 
   try {
+    const headers = getAuthHeaders({ 'Content-Type': 'application/json' });
     const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/progress`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(progressData)
     });
     if (!res.ok) {
@@ -251,7 +294,7 @@ export async function flushPendingProgressSaveToApi() {
 }
 
 /**
- * Issue or update certificate in MongoDB via Express API
+ * Issue or update certificate in MongoDB via Express API (authenticated & ownership protected)
  */
 export async function saveCertificateToApi(email, certPayload) {
   const cleanEmail = normalizeEmail(email);
@@ -260,9 +303,10 @@ export async function saveCertificateToApi(email, certPayload) {
   }
 
   try {
+    const headers = getAuthHeaders({ 'Content-Type': 'application/json' });
     const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/certificate`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(certPayload)
     });
     if (!res.ok) {
@@ -276,7 +320,7 @@ export async function saveCertificateToApi(email, certPayload) {
 }
 
 /**
- * Fetch certificate from MongoDB via Express API
+ * Fetch certificate from MongoDB via Express API (authenticated & ownership protected)
  */
 export async function getCertificateFromApi(email) {
   const cleanEmail = normalizeEmail(email);
@@ -285,7 +329,8 @@ export async function getCertificateFromApi(email) {
   }
 
   try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/certificate`);
+    const headers = getAuthHeaders();
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/certificate`, { headers });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       return { 
@@ -300,4 +345,3 @@ export async function getCertificateFromApi(email) {
     return { success: false, offline: true, message: 'Server is unavailable. Could not load certificate.' };
   }
 }
-

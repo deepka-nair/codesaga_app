@@ -116,7 +116,8 @@ const Login = () => {
       const sessionObj = {
         userId: loadedUser.userId || loadedUser.id || 'USR_EXISTS',
         email: cleanEmail,
-        username: loadedUser.username || cleanEmail.split('@')[0]
+        username: loadedUser.username || cleanEmail.split('@')[0],
+        token: res.token || null
       };
       localStorage.setItem("codesaga_session", JSON.stringify(sessionObj));
 

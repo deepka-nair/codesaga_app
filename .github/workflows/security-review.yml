@@ -75,7 +75,7 @@ jobs:
       - name: 7. Run Trivy Filesystem Vulnerability Scan
         id: trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # v0.28.0 (verified release commit SHA)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 (verified official release commit SHA)
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -112,7 +112,7 @@ jobs:
           echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| **Gitleaks** | Repository Secret Detection | ✅ Clean (0 Secrets) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Semgrep** | OWASP Top 10 SAST Analysis | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Trivy** | Filesystem & Container Scan | ✅ Verified (v0.28.0) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Trivy** | Filesystem & Container Scan | ✅ Verified (v0.36.0) |" >> $GITHUB_STEP_SUMMARY
           echo "| **NPM Audit** | Software Composition Analysis | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
           echo "| **DevSecOps Reports** | Excel & Markdown Reports | ✅ Generated |" >> $GITHUB_STEP_SUMMARY
 

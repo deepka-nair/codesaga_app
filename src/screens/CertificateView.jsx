@@ -21,14 +21,29 @@ const CertificateView = () => {
     user, 
     isGuest, 
     certificateName, 
+    certificateId,
+    certificateIssued,
+    certificateIssuedAt,
+    certificates,
     worldCertificates,
     claimWorldCertificate
   } = store;
 
-  const isDev = isDeveloper(user);
+  const userEmail = String(user?.email || '').trim().toLowerCase();
+  const isSpecial = userEmail === 'deepkanair8@gmail.com';
+  const isDev = !isSpecial && isDeveloper(user);
   const isGuestMode = isGuest || (!user && !isDev);
   const isCompleted = isWorldCompleted(targetWorldId, store);
-  const isEligible = isDev || isCompleted;
+
+  const certIdParam = searchParams.get('id');
+  const userMasterCertId = certificateId || certificates?.certificateId || '';
+  const userMasterIssued = Boolean(certificateIssued || certificates?.certificateIssued);
+  const userMasterIssuedAt = certificateIssuedAt || certificates?.certificateIssuedAt || '';
+  const userMasterName = certificateName || certificates?.certificateName || user?.name || user?.username || '';
+
+  const isMasterCertRequest = (certIdParam && certIdParam === userMasterCertId) || (!searchParams.get('world') && userMasterIssued);
+  const isWorldCertEarned = Boolean((worldCertificates || {})[targetWorldId] || isCompleted);
+  const isEligible = isDev || isCompleted || isMasterCertRequest || (userMasterIssued && !searchParams.get('world'));
 
   const [localCertInfo, setLocalCertInfo] = useState(null);
   const [isClaiming, setIsClaiming] = useState(false);
@@ -36,7 +51,7 @@ const CertificateView = () => {
   // Automatically claim/retrieve world-specific certificate on load if eligible
   useEffect(() => {
     async function initCertificate() {
-      if (!isGuestMode && isEligible) {
+      if (!isGuestMode && isEligible && !isMasterCertRequest) {
         const currentCerts = worldCertificates || {};
         if (!currentCerts[targetWorldId]) {
           setIsClaiming(true);
@@ -47,19 +62,24 @@ const CertificateView = () => {
       }
     }
     initCertificate();
-  }, [isGuestMode, isEligible, targetWorldId, worldCertificates]);
+  }, [isGuestMode, isEligible, targetWorldId, worldCertificates, isMasterCertRequest]);
 
   const activeUsername = isGuestMode 
     ? 'CodeSaga Explorer' 
-    : (user?.name || certificateName || (isDev ? 'Developer' : (user?.email ? user.email.split('@')[0] : '')));
+    : (userMasterName || (user?.name || certificateName || (isDev ? 'Developer' : (user?.email ? user.email.split('@')[0] : ''))));
 
   const existingCert = (worldCertificates || {})[targetWorldId] || localCertInfo;
 
   const displayCertId = isGuestMode 
     ? `CS-${worldConfig.codePrefix.replace('CS-', '')}-PREVIEW` 
-    : (existingCert?.id || `${worldConfig.codePrefix}-PENDING`);
+    : (isMasterCertRequest 
+        ? userMasterCertId 
+        : (existingCert?.id || (userMasterIssued ? userMasterCertId : `${worldConfig.codePrefix}-PENDING`)));
   
-  const rawDate = existingCert?.issued_at || new Date().toISOString();
+  const rawDate = isMasterCertRequest 
+    ? (userMasterIssuedAt || new Date().toISOString())
+    : (existingCert?.issued_at || (userMasterIssued ? userMasterIssuedAt : new Date().toISOString()));
+
   const formattedDate = isGuestMode ? 'PREVIEW MODE' : new Date(rawDate).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -76,20 +96,22 @@ const CertificateView = () => {
     window.print();
   };
 
-  // Block normal users if world is incomplete
+  // Block users if certificate is not earned and does not exist
   if (!isGuestMode && !isEligible) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#0a0e17', color: 'white', padding: '4rem 1.5rem', textAlign: 'center' }}>
         <PixelPanel style={{ maxWidth: '600px', margin: '0 auto', borderTop: '4px solid #ef4444', backgroundColor: '#1e293b' }}>
           <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '1rem' }}>🎓🔒</span>
           <h2 style={{ color: '#ef4444', fontFamily: 'var(--font-pixel)', fontSize: '1.4rem', marginBottom: '0.75rem' }}>
-            {worldConfig.name} CERTIFICATE HIDDEN
+            {certIdParam ? 'CERTIFICATE NOT FOUND' : `${worldConfig.name} CERTIFICATE LOCKED`}
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-            Complete all {worldConfig.totalChapters} chapters in {worldConfig.name} to earn this certificate.
+            {certIdParam 
+              ? `The requested certificate (${certIdParam}) was not found or has not been issued to this account.`
+              : `Complete all ${worldConfig.totalChapters} chapters in ${worldConfig.name} to earn this certificate.`}
           </p>
           <GameButton onClick={() => navigate('/worlds')} variant="gold">
-            RETURN TO GAME 🏙️
+            RETURN TO WORLDS 🏙️
           </GameButton>
         </PixelPanel>
       </div>

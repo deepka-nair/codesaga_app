@@ -478,6 +478,48 @@ router.put('/:email/progress', async (req, res) => {
 });
 
 /**
+ * GET /api/users/:email/certificate
+ * Retrieve certificate details for a user from MongoDB
+ */
+router.get('/:email/certificate', async (req, res) => {
+  try {
+    const cleanEmail = normalizeEmail(req.params.email);
+    if (!cleanEmail || cleanEmail.includes('guest_')) {
+      return res.status(404).json({ success: false, message: 'No certificates found for guest session.' });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ success: false, message: 'Database temporarily unavailable. Please try again.' });
+    }
+
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User account not found.' });
+    }
+
+    const hasCert = Boolean(
+      user.certificates && 
+      (user.certificates.certificateIssued || user.certificates.certificateId || Object.keys(user.certificates.worldCertificates || {}).length > 0)
+    );
+
+    if (!hasCert) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'No official certificates have been issued to this account yet.' 
+      });
+    }
+
+    return res.json({
+      success: true,
+      certificates: user.certificates
+    });
+  } catch (error) {
+    console.error('[MongoDB Get Certificate Error]:', error.message);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve certificate', error: error.message });
+  }
+});
+
+/**
  * PUT /api/users/:email/certificate
  * Save or update certificate details
  */

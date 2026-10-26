@@ -1,4 +1,4 @@
-import { isDeveloper } from './userRole';
+import { isDeveloper } from './userRole.js';
 
 export function checkCertificateEligibility(storeState = {}) {
   if (!storeState.user || storeState.isGuest) {
@@ -11,8 +11,30 @@ export function checkCertificateEligibility(storeState = {}) {
     };
   }
 
-  // Developer Role Access Rule: Developer gets full testing access to certificates
-  const isDev = isDeveloper(storeState.user);
+  // Check if certificate is already issued in user state or cloud database
+  const hasIssuedCertificate = Boolean(
+    storeState.certificates?.certificateIssued ||
+    storeState.certificateIssued ||
+    storeState.certificates?.certificateId ||
+    storeState.certificateId
+  );
+
+  if (hasIssuedCertificate) {
+    const certId = storeState.certificates?.certificateId || storeState.certificateId || 'CS-VERIFIED';
+    return {
+      isEligible: true,
+      hasExistingCertificate: true,
+      certificateId: certId,
+      reason: `Official Certificate (${certId}) verified and accessible.`,
+      progressPercentage: 100,
+      completedChaptersCount: storeState.completedChapters?.length || 0,
+      completedMissionsCount: storeState.completedMissions?.length || 0
+    };
+  }
+
+  const userEmail = String(storeState.user?.email || '').trim().toLowerCase();
+  const isSpecial = userEmail === 'deepkanair8@gmail.com';
+  const isDev = !isSpecial && isDeveloper(storeState.user);
   if (isDev) {
     return {
       isEligible: true,

@@ -62,7 +62,13 @@ const SqlWorld = () => {
   }, [activeMissionIndex, activeChapterId, currentMission.id, completedMissions]);
 
   const handleSelectChapter = (chId) => {
-    if (!unlockedChapters.includes(chId)) {
+    const userEmail = String(useStore.getState().user?.email || '').trim().toLowerCase();
+    const isSpecial = userEmail === 'deepkanair8@gmail.com';
+    const isUnlocked = isSpecial 
+      ? (chId === 1 || unlockedChapters.includes(chId) || (completedChapters || []).includes(chId - 1))
+      : (isDev || chId === 1 || unlockedChapters.includes(chId) || (completedChapters || []).includes(chId - 1));
+
+    if (!isUnlocked) {
       audioManager.playDisabled();
       return;
     }
@@ -365,8 +371,12 @@ const SqlWorld = () => {
           }}
         >
           {SQL_CURRICULUM.map((ch) => {
-            const isUnlocked = isDev || unlockedChapters.includes(ch.id);
-            const isCompleted = completedChapters.includes(ch.id);
+            const userEmail = String(useStore.getState().user?.email || '').trim().toLowerCase();
+            const isSpecial = userEmail === 'deepkanair8@gmail.com';
+            const isUnlocked = isSpecial 
+              ? (ch.id === 1 || unlockedChapters.includes(ch.id) || (completedChapters || []).includes(ch.id - 1))
+              : (isDev || ch.id === 1 || unlockedChapters.includes(ch.id) || (completedChapters || []).includes(ch.id - 1));
+            const isCompleted = (completedChapters || []).includes(ch.id);
             const isActive = activeChapterId === ch.id;
 
             return (

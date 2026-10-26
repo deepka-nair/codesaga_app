@@ -274,3 +274,30 @@ export async function saveCertificateToApi(email, certPayload) {
     return { success: false, offline: true, message: error.message };
   }
 }
+
+/**
+ * Fetch certificate from MongoDB via Express API
+ */
+export async function getCertificateFromApi(email) {
+  const cleanEmail = normalizeEmail(email);
+  if (!cleanEmail || cleanEmail.includes('guest_')) {
+    return { success: false, message: 'No certificates found for guest session.' };
+  }
+
+  try {
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}/certificate`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { 
+        success: false, 
+        status: res.status, 
+        message: data.message || `Certificate not found (${res.status})` 
+      };
+    }
+    return data;
+  } catch (error) {
+    console.error('Error in getCertificateFromApi:', error);
+    return { success: false, offline: true, message: 'Server is unavailable. Could not load certificate.' };
+  }
+}
+

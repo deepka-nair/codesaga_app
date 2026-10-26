@@ -192,13 +192,16 @@ const BackendWorld = () => {
 
   const beCompletedChapters = backendProgress?.completedChapters || [];
 
+  const userEmail = String(useStore.getState().user?.email || '').trim().toLowerCase();
+  const isSpecial = userEmail === 'deepkanair8@gmail.com';
   const isDev = isDeveloper(useStore.getState().user);
+  const effectiveDev = !isSpecial && isDev;
   const isGuest = isGuestUser(useStore.getState());
   const [showGuestUnlockModal, setShowGuestUnlockModal] = useState(false);
 
   const isGuestChapterLocked = isGuest && activeChapterId > 1;
-  const isCurrentChapterLocked = !isDev && (isGuestChapterLocked || (activeChapterId > 1 && !beCompletedChapters.includes(activeChapterId - 1)));
-  const isCurrentMissionLocked = !isDev && (isGuest ? activeMissionIndex >= GUEST_PREVIEW_LIMITS.maxMissionsPerChapter : (activeMissionIndex > 0 && !completedMissions.includes(activeChapter.missions[activeMissionIndex - 1]?.id)));
+  const isCurrentChapterLocked = !effectiveDev && (isGuestChapterLocked || (activeChapterId > 1 && !beCompletedChapters.includes(activeChapterId - 1)));
+  const isCurrentMissionLocked = !effectiveDev && (isGuest ? activeMissionIndex >= GUEST_PREVIEW_LIMITS.maxMissionsPerChapter : (activeMissionIndex > 0 && !completedMissions.includes(activeChapter.missions[activeMissionIndex - 1]?.id)));
 
   if (isGuestChapterLocked) {
     return (

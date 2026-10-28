@@ -26,7 +26,7 @@ jobs:
       - name: 2. Set up Node.js Environment (v20)
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0 (official release commit SHA targeting Node.js 24)
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: 2b. Setup Chrome for Headless Selenium WebDriver

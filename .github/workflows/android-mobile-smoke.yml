@@ -2,7 +2,7 @@ name: CodeSaga Android Emulator Smoke Tests
 
 on:
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, 'security/**' ]
   push:
     branches: [ main, master ]
   workflow_dispatch:

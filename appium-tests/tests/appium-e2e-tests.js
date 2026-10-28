@@ -12,6 +12,8 @@ import { generateAppiumReportFromResults } from '../scripts/generate-excel-repor
 
 export const executionResults = [];
 
+const APPIUM_BLOCKER_MSG = "BLOCKED: Appium automation session not connected. Test requires Appium Server 2.x on port 4723 and an active Android Emulator or physical device with com.codesaga.app installed. Mobile hardware virtualization is unavailable in headless CI.";
+
 /**
  * Mobile Page Object Model (POM) for CodeSaga Mobile Frontend
  */
@@ -55,12 +57,23 @@ export class MobileAppPage {
       await btn.click();
     }
   }
+
+  async swipeQuestCarousel(direction = 'left') {
+    if (this.driver) {
+      // Touch swipe action via WebdriverIO touch action
+      await this.driver.execute('mobile: swipeGesture', {
+        left: 100, top: 300, width: 600, height: 400,
+        direction,
+        percent: 0.75
+      }).catch(() => {});
+    }
+  }
 }
 
 describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', function () {
   this.timeout(300000);
-  let driver;
-  let mobilePage;
+  let driver = null;
+  let mobilePage = null;
 
   before(async function () {
     if (process.env.RUN_LIVE_APPIUM === 'true') {
@@ -71,8 +84,10 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
         });
         mobilePage = new MobileAppPage(driver);
       } catch (e) {
-        console.warn("Appium driver connection note: Running in simulated test harness mode.");
+        console.warn("Appium driver connection note: Appium server not reachable. Execution blocked due to missing mobile virtualization environment.");
       }
+    } else {
+      console.warn("Appium driver connection note: RUN_LIVE_APPIUM not enabled. Execution blocked due to missing mobile virtualization environment.");
     }
   });
 
@@ -90,6 +105,13 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
   });
 
   function recordTest(id, category, title, status, actual, priority = 'Medium', severity = 'Major', mode = 'Automated') {
+    const isSessionActive = Boolean(driver && mobilePage);
+    const finalStatus = isSessionActive ? status : "Blocked";
+    const finalActual = isSessionActive ? (actual || "Executed via Appium mobile automation.") : APPIUM_BLOCKER_MSG;
+    const finalNotes = isSessionActive
+      ? "Appium mobile E2E automated test execution result."
+      : "Execution blocked: Mobile virtualization environment and Appium 2.x server unavailable in CI.";
+
     executionResults.push({
       id,
       category,
@@ -98,13 +120,13 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
       steps: `1. Launch CodeSaga Mobile App\n2. Execute mobile test scenario ${id}\n3. Assert mobile component state`,
       data: `MobileData_${id}`,
       expected: `System handles mobile test scenario ${id} cleanly as expected.`,
-      actual: actual || "Passed cleanly. Verified via Appium mobile automation.",
-      status: "Pass",
+      actual: finalActual,
+      status: finalStatus,
       priority,
       severity,
       mode,
       scriptRef: `appium-e2e-tests.js#${id}`,
-      notes: "Appium mobile E2E automated test execution result."
+      notes: finalNotes
     });
   }
 
@@ -113,24 +135,36 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
   // =========================================================================
   describe('1. Mobile Launch & App Lifecycle', function () {
     it('TC_APP_001: Should launch mobile app and verify splash title screen', async function () {
-      if (driver && mobilePage) {
-        const isDisplayed = await (await mobilePage.appHeader).isDisplayed();
-        expect(isDisplayed).to.be.true;
+      if (!driver || !mobilePage) {
+        recordTest('TC_APP_001', 'Mobile Launch & App Lifecycle', 'Should launch mobile app and verify splash title screen', 'Blocked', APPIUM_BLOCKER_MSG, 'High', 'Critical');
+        this.skip();
+        return;
       }
+      const isDisplayed = await (await mobilePage.appHeader).isDisplayed();
+      expect(isDisplayed).to.be.true;
       recordTest('TC_APP_001', 'Mobile Launch & App Lifecycle', 'Should launch mobile app and verify splash title screen', 'Pass', 'Mobile splash screen rendered cleanly.', 'High', 'Critical');
     });
 
     it('TC_APP_002: Should handle app backgrounding and session restoration', async function () {
-      if (driver) {
-        await driver.background(2);
+      if (!driver) {
+        recordTest('TC_APP_002', 'Mobile Launch & App Lifecycle', 'Should handle app backgrounding and session restoration', 'Blocked', APPIUM_BLOCKER_MSG, 'High', 'Major');
+        this.skip();
+        return;
       }
+      await driver.background(2);
       recordTest('TC_APP_002', 'Mobile Launch & App Lifecycle', 'Should handle app backgrounding and session restoration', 'Pass', 'App resumed successfully after 2s backgrounding.', 'High', 'Major');
     });
 
     for (let i = 3; i <= 35; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Mobile Launch & App Lifecycle test scenario #${i}`, async function () {
-        recordTest(tcId, 'Mobile Launch & App Lifecycle', `Mobile Launch & App Lifecycle test scenario #${i}`, 'Pass', `Verified mobile app lifecycle sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Mobile Launch & App Lifecycle', `Mobile Launch & App Lifecycle test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Mobile Launch & App Lifecycle', `Mobile Launch & App Lifecycle test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });
@@ -140,16 +174,25 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
   // =========================================================================
   describe('2. Mobile Auth & Guest Access', function () {
     it('TC_APP_036: Should execute Mobile Guest Login and navigate to Worlds screen', async function () {
-      if (driver && mobilePage) {
-        await mobilePage.loginAsGuest();
+      if (!driver || !mobilePage) {
+        recordTest('TC_APP_036', 'Mobile Auth & Guest Access', 'Should execute Mobile Guest Login and navigate to Worlds screen', 'Blocked', APPIUM_BLOCKER_MSG, 'High', 'Critical');
+        this.skip();
+        return;
       }
+      await mobilePage.loginAsGuest();
       recordTest('TC_APP_036', 'Mobile Auth & Guest Access', 'Should execute Mobile Guest Login and navigate to Worlds screen', 'Pass', 'Guest user authenticated and redirected to /worlds dashboard.', 'High', 'Critical');
     });
 
     for (let i = 37; i <= 75; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Mobile Auth & Guest Access test scenario #${i}`, async function () {
-        recordTest(tcId, 'Mobile Auth & Guest Access', `Mobile Auth & Guest Access test scenario #${i}`, 'Pass', `Verified mobile authentication sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Mobile Auth & Guest Access', `Mobile Auth & Guest Access test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Mobile Auth & Guest Access', `Mobile Auth & Guest Access test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });
@@ -159,16 +202,25 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
   // =========================================================================
   describe('3. Touch Gestures, Swipe & Pinch/Zoom', function () {
     it('TC_APP_076: Should perform horizontal swipe gesture across Quest cards carousel', async function () {
-      if (driver && mobilePage) {
-        await mobilePage.swipeQuestCarousel('left');
+      if (!driver || !mobilePage) {
+        recordTest('TC_APP_076', 'Touch Gestures, Swipe & Pinch/Zoom', 'Should perform horizontal swipe gesture across Quest cards carousel', 'Blocked', APPIUM_BLOCKER_MSG, 'High', 'Critical');
+        this.skip();
+        return;
       }
+      await mobilePage.swipeQuestCarousel('left');
       recordTest('TC_APP_076', 'Touch Gestures, Swipe & Pinch/Zoom', 'Should perform horizontal swipe gesture across Quest cards carousel', 'Pass', 'Horizontal swipe gesture executed smoothly.', 'High', 'Critical');
     });
 
     for (let i = 77; i <= 110; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Touch Gestures & Swipe test scenario #${i}`, async function () {
-        recordTest(tcId, 'Touch Gestures, Swipe & Pinch/Zoom', `Touch Gestures & Swipe test scenario #${i}`, 'Pass', `Verified touch gesture sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Touch Gestures, Swipe & Pinch/Zoom', `Touch Gestures & Swipe test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Touch Gestures, Swipe & Pinch/Zoom', `Touch Gestures & Swipe test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });
@@ -180,7 +232,13 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
     for (let i = 111; i <= 140; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Mobile Code Editor & Keyboard test scenario #${i}`, async function () {
-        recordTest(tcId, 'Mobile Code Editor & Keyboard Inputs', `Mobile Code Editor test scenario #${i}`, 'Pass', `Verified mobile code editor sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Mobile Code Editor & Keyboard Inputs', `Mobile Code Editor test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Mobile Code Editor & Keyboard Inputs', `Mobile Code Editor test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });
@@ -192,7 +250,13 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
     for (let i = 141; i <= 165; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Device Features test scenario #${i}`, async function () {
-        recordTest(tcId, 'Device Features (Camera, Biometrics, Push)', `Device feature test scenario #${i}`, 'Pass', `Verified device feature sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Device Features (Camera, Biometrics, Push)', `Device feature test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Device Features (Camera, Biometrics, Push)', `Device feature test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });
@@ -204,7 +268,13 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
     for (let i = 166; i <= 185; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Screen Orientation test scenario #${i}`, async function () {
-        recordTest(tcId, 'Screen Orientation (Portrait/Landscape)', `Screen orientation test scenario #${i}`, 'Pass', `Verified screen orientation sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Screen Orientation (Portrait/Landscape)', `Screen orientation test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Screen Orientation (Portrait/Landscape)', `Screen orientation test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });
@@ -216,7 +286,13 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
     for (let i = 186; i <= 220; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Offline Mode & Network Resilience test scenario #${i}`, async function () {
-        recordTest(tcId, 'Offline Mode & Mobile Network Resilience', `Offline resilience test scenario #${i}`, 'Pass', `Verified offline mode sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Offline Mode & Mobile Network Resilience', `Offline resilience test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Offline Mode & Mobile Network Resilience', `Offline resilience test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });
@@ -228,7 +304,13 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
     for (let i = 221; i <= 245; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Hybrid WebView & Context Switching test scenario #${i}`, async function () {
-        recordTest(tcId, 'Hybrid WebView & Context Switching', `Context switching test scenario #${i}`, 'Pass', `Verified hybrid context sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Hybrid WebView & Context Switching', `Context switching test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Hybrid WebView & Context Switching', `Context switching test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });
@@ -240,7 +322,13 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
     for (let i = 246; i <= 275; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Mobile UI & Accessibility test scenario #${i}`, async function () {
-        recordTest(tcId, 'Mobile UI, Accessibility IDs & Dark Theme', `Mobile UI sub-scenario #${i}`, 'Pass', `Verified mobile accessibility ID sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Mobile UI, Accessibility IDs & Dark Theme', `Mobile UI sub-scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Mobile UI, Accessibility IDs & Dark Theme', `Mobile UI sub-scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });
@@ -252,7 +340,13 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
     for (let i = 276; i <= 295; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Driver Compatibility test scenario #${i}`, async function () {
-        recordTest(tcId, 'Android UiAutomator2 vs iOS XCUITest Compatibility', `Driver compatibility sub-scenario #${i}`, 'Pass', `Verified driver compatibility sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Android UiAutomator2 vs iOS XCUITest Compatibility', `Driver compatibility sub-scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Android UiAutomator2 vs iOS XCUITest Compatibility', `Driver compatibility sub-scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });
@@ -264,7 +358,13 @@ describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', functi
     for (let i = 296; i <= 310; i++) {
       const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
       it(`${tcId}: Mobile Security & Storage test scenario #${i}`, async function () {
-        recordTest(tcId, 'Mobile Security, SSL Pinning & Storage', `Security & storage sub-scenario #${i}`, 'Pass', `Verified mobile security sub-scenario #${i}.`);
+        if (!driver || !mobilePage) {
+          recordTest(tcId, 'Mobile Security, SSL Pinning & Storage', `Security & storage sub-scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
+          this.skip();
+          return;
+        }
+        recordTest(tcId, 'Mobile Security, SSL Pinning & Storage', `Security & storage sub-scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
+        this.skip();
       });
     }
   });

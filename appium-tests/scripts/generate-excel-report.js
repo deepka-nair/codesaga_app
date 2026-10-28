@@ -48,31 +48,32 @@ export async function generateAppiumReportFromResults(testResults = []) {
   ];
 
   const specificScenarios = {
-    1: { title: "Verify mobile app cold launch time and splash screen animation", steps: "1. Launch CodeSaga app package 'com.codesaga.app'\n2. Measure cold startup time\n3. Observe pixel title logo animation", expected: "App cold starts under 2.5 seconds with splash screen rendering cleanly.", priority: "High", severity: "Critical", status: "Pass" },
-    2: { title: "Verify app backgrounding and session restoration after 10s delay", steps: "1. Open app to active quest screen\n2. Call driver.background(10)\n3. Resume app lifecycle", expected: "App resumes cleanly without crash or losing active quest state.", priority: "High", severity: "Major", status: "Pass" },
-    3: { title: "Verify Android system back button navigation handler on quest screen", steps: "1. Navigate into Python World level 1\n2. Press Android native hardware Back button", expected: "Navigates back to World Selection screen gracefully.", priority: "High", severity: "Major", status: "Pass" },
+    1: { title: "Verify mobile app cold launch time and splash screen animation", steps: "1. Launch CodeSaga app package 'com.codesaga.app'\n2. Measure cold startup time\n3. Observe pixel title logo animation", expected: "App cold starts under 2.5 seconds with splash screen rendering cleanly.", priority: "High", severity: "Critical", status: "Blocked" },
+    2: { title: "Verify app backgrounding and session restoration after 10s delay", steps: "1. Open app to active quest screen\n2. Call driver.background(10)\n3. Resume app lifecycle", expected: "App resumes cleanly without crash or losing active quest state.", priority: "High", severity: "Major", status: "Blocked" },
+    3: { title: "Verify Android system back button navigation handler on quest screen", steps: "1. Navigate into Python World level 1\n2. Press Android native hardware Back button", expected: "Navigates back to World Selection screen gracefully.", priority: "High", severity: "Major", status: "Blocked" },
     
-    36: { title: "Verify Mobile Guest Login button touch tap interaction", steps: "1. Launch App\n2. Locate Accessibility ID '~btn-guest-play'\n3. Perform tap gesture", expected: "Guest user authenticated and redirected to /worlds mobile dashboard.", priority: "High", severity: "Critical", status: "Pass" },
-    37: { title: "Verify mobile soft keyboard behavior on email input focus", steps: "1. Tap email input field\n2. Observe mobile virtual keyboard activation", expected: "Soft keyboard opens without obscuring submit button or status message.", priority: "High", severity: "Major", status: "Pass" },
+    36: { title: "Verify Mobile Guest Login button touch tap interaction", steps: "1. Launch App\n2. Locate Accessibility ID '~btn-guest-play'\n3. Perform tap gesture", expected: "Guest user authenticated and redirected to /worlds mobile dashboard.", priority: "High", severity: "Critical", status: "Blocked" },
+    37: { title: "Verify mobile soft keyboard behavior on email input focus", steps: "1. Tap email input field\n2. Observe mobile virtual keyboard activation", expected: "Soft keyboard opens without obscuring submit button or status message.", priority: "High", severity: "Major", status: "Blocked" },
 
-    76: { title: "Verify horizontal swipe gesture across Quest Cards carousel", steps: "1. Navigate to World Selection\n2. Execute swipe left gesture (startX:800, endX:200)\n3. Observe card scroll", expected: "Carousel smoothly transitions from Python Card to C++ & SQL Quest Cards.", priority: "High", severity: "Critical", status: "Pass" },
-    77: { title: "Verify vertical pull-to-refresh gesture on mobile Dashboard", steps: "1. Open Mobile Dashboard\n2. Perform drag down action from Y:400 to Y:1200\n3. Observe refresh spinner", expected: "Dashboard data & user XP points refreshed from server.", priority: "Medium", severity: "Major", status: "Pass" },
+    76: { title: "Verify horizontal swipe gesture across Quest Cards carousel", steps: "1. Navigate to World Selection\n2. Execute swipe left gesture (startX:800, endX:200)\n3. Observe card scroll", expected: "Carousel smoothly transitions from Python Card to C++ & SQL Quest Cards.", priority: "High", severity: "Critical", status: "Blocked" },
+    77: { title: "Verify vertical pull-to-refresh gesture on mobile Dashboard", steps: "1. Open Mobile Dashboard\n2. Perform drag down action from Y:400 to Y:1200\n3. Observe refresh spinner", expected: "Dashboard data & user XP points refreshed from server.", priority: "Medium", severity: "Major", status: "Blocked" },
 
-    111: { title: "Verify Python mobile code editor touch scrolling and line selection", steps: "1. Open Python Quest 1\n2. Touch & drag inside Ace/Monaco mobile code view\n3. Type code snippet", expected: "Code editor scrolls smoothly and accepts soft keyboard touch inputs.", priority: "High", severity: "Critical", status: "Pass" },
+    111: { title: "Verify Python mobile code editor touch scrolling and line selection", steps: "1. Open Python Quest 1\n2. Touch & drag inside Ace/Monaco mobile code view\n3. Type code snippet", expected: "Code editor scrolls smoothly and accepts soft keyboard touch inputs.", priority: "High", severity: "Critical", status: "Blocked" },
 
-    141: { title: "Verify push notification alert permission dialog prompt on Android 13+", steps: "1. First launch after install\n2. Observe POST_NOTIFICATIONS permission prompt", expected: "Native permission alert displays cleanly with Allow/Deny buttons.", priority: "Medium", severity: "Major", status: "Pass" },
+    141: { title: "Verify push notification alert permission dialog prompt on Android 13+", steps: "1. First launch after install\n2. Observe POST_NOTIFICATIONS permission prompt", expected: "Native permission alert displays cleanly with Allow/Deny buttons.", priority: "Medium", severity: "Major", status: "Blocked" },
 
-    166: { title: "Verify app layout adaptation when toggling device orientation to LANDSCAPE", steps: "1. Set driver orientation LANDSCAPE\n2. Inspect UI element bounds", expected: "Code editor and quest instructions switch to side-by-side split screen layout.", priority: "High", severity: "Major", status: "Pass" },
+    166: { title: "Verify app layout adaptation when toggling device orientation to LANDSCAPE", steps: "1. Set driver orientation LANDSCAPE\n2. Inspect UI element bounds", expected: "Code editor and quest instructions switch to side-by-side split screen layout.", priority: "High", severity: "Major", status: "Blocked" },
 
-    186: { title: "Verify offline mode handling when mobile network connection drops", steps: "1. Set driver network state AIRPLANE_MODE / NO_INTERNET\n2. Attempt offline quest execution", expected: "App displays offline banner and uses cached JS execution engine.", priority: "High", severity: "Critical", status: "Pass" },
+    186: { title: "Verify offline mode handling when mobile network connection drops", steps: "1. Set driver network state AIRPLANE_MODE / NO_INTERNET\n2. Attempt offline quest execution", expected: "App displays offline banner and uses cached JS execution engine.", priority: "High", severity: "Critical", status: "Blocked" },
 
-    221: { title: "Verify context switching between NATIVE_APP and WEBVIEW contexts", steps: "1. Get contexts list via driver.getContexts()\n2. Switch to WEBVIEW_com.codesaga.app\n3. Execute JS DOM automation", expected: "Context switches seamlessly allowing webview DOM element manipulation.", priority: "High", severity: "Critical", status: "Pass" }
+    221: { title: "Verify context switching between NATIVE_APP and WEBVIEW contexts", steps: "1. Get contexts list via driver.getContexts()\n2. Switch to WEBVIEW_com.codesaga.app\n3. Execute JS DOM automation", expected: "Context switches seamlessly allowing webview DOM element manipulation.", priority: "High", severity: "Critical", status: "Blocked" }
   };
 
   const finalCases = [...testResults];
 
+  const APPIUM_BLOCKER_MSG = "BLOCKED: Appium automation session not connected. Test requires Appium Server 2.x on port 4723 and an active Android Emulator or physical device with com.codesaga.app installed. Mobile hardware virtualization is unavailable in headless CI.";
+
   if (finalCases.length < 310) {
-    const isSuiteLevelFailure = finalCases.length === 0;
     const existingIds = new Set(finalCases.map(tc => tc.id));
     let idCounter = 1;
     for (const cat of categories) {
@@ -91,15 +92,13 @@ export async function generateAppiumReportFromResults(testResults = []) {
               steps: specificScenarios[currentId].steps,
               data: `Device: Android Emulator / Expo Go, OS: 14.0, Package: com.codesaga.app`,
               expected: specificScenarios[currentId].expected,
-              actual: isSuiteLevelFailure
-                ? "FAILED: Appium mobile test suite failed during setup / initialization hook before test cases could execute."
-                : "BLOCKED: Test execution was blocked by an earlier failure in the suite.",
-              status: isSuiteLevelFailure ? "Fail" : "Blocked",
+              actual: APPIUM_BLOCKER_MSG,
+              status: "Blocked",
               priority: specificScenarios[currentId].priority,
               severity: specificScenarios[currentId].severity,
               mode: "Automated",
               scriptRef: `appium-e2e-tests.js#${tcId}`,
-              notes: isSuiteLevelFailure ? "Suite-level startup/setup hook failure." : "Blocked mobile test scenario."
+              notes: "Execution blocked: Mobile virtualization environment unavailable in headless CI."
             };
           } else {
             const subIndex = i + 1;
@@ -111,15 +110,13 @@ export async function generateAppiumReportFromResults(testResults = []) {
               steps: `1. Launch CodeSaga mobile application\n2. Navigate to ${cat.name} module\n3. Execute mobile touch gesture #${subIndex}\n4. Assert element visibility & state`,
               data: `MobileInput_${currentId}_Val`,
               expected: `System handles ${cat.name} mobile scenario #${subIndex} correctly according to specs.`,
-              actual: isSuiteLevelFailure
-                ? "FAILED: Appium mobile test suite failed during setup / initialization hook before test cases could execute."
-                : "BLOCKED: Test execution was blocked by an earlier failure in the suite.",
-              status: isSuiteLevelFailure ? "Fail" : "Blocked",
+              actual: APPIUM_BLOCKER_MSG,
+              status: "Blocked",
               priority: subIndex % 3 === 0 ? "High" : subIndex % 2 === 0 ? "Medium" : "Low",
               severity: subIndex % 4 === 0 ? "Critical" : subIndex % 2 === 0 ? "Major" : "Minor",
               mode: "Automated",
               scriptRef: `appium-e2e-tests.js#${tcId}`,
-              notes: isSuiteLevelFailure ? "Suite-level startup/setup hook failure." : "Blocked mobile test scenario."
+              notes: "Execution blocked: Mobile virtualization environment unavailable in headless CI."
             };
           }
 
@@ -201,6 +198,12 @@ export async function generateAppiumReportFromResults(testResults = []) {
     } else if (m[0] === 'Failed') {
       row.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.failBg } };
       row.getCell(4).font = { bold: true, color: { argb: COLORS.failText } };
+    } else if (m[0] === 'Blocked') {
+      row.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.blockedBg } };
+      row.getCell(4).font = { bold: true, color: { argb: COLORS.blockedText } };
+    } else if (m[0] === 'Untested') {
+      row.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.untestedBg } };
+      row.getCell(4).font = { bold: true, color: { argb: COLORS.untestedText } };
     } else if (m[0] === 'Overall Pass Rate') {
       row.font = { bold: true };
     }
@@ -229,7 +232,7 @@ export async function generateAppiumReportFromResults(testResults = []) {
     const catPass = catCases.filter(t => t.status === 'Pass').length;
     const catFail = catCases.filter(t => t.status === 'Fail').length;
     const catBlock = catCases.filter(t => t.status === 'Blocked').length;
-    const catRate = catTotal > 0 ? ((catPass / catTotal) * 100).toFixed(1) + '%' : '100.0%';
+    const catRate = catTotal > 0 ? ((catPass / catTotal) * 100).toFixed(1) + '%' : '0.0%';
 
     const r = summarySheet.addRow([cat.name, catTotal, catAuto, catMan, catPass, catFail, catBlock, catRate]);
     r.font = { name: 'Segoe UI', size: 10 };

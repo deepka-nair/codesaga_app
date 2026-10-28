@@ -62,7 +62,7 @@ async function generateSecurityExcelReport() {
     
     ['Dependencies (SCA) — Moderate (qs, query-string, uuid)', 3, 3, 0, 'REMEDIATED (0 Moderate Remaining)'],
     ['Hardcoded Secrets (Gitleaks)', 0, 0, 0, 'CLEAN (0 Secrets Detected)'],
-    ['Total Findings Register (findings.csv)', 19, 19, 0, 'REMEDIATED (19/19 Registered Findings; 0 Pending)'], 
+    ['Total Findings Register (findings.csv)', 13, 13, 0, '13 CSV records marked Remediated; residual audit findings are reported separately'], 
     ['Critical Security Gate Policy', 0, 0, 0, 'PASSED (Zero Criticals)']
   ];
 

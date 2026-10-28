@@ -14,7 +14,7 @@ export const ANDROID_CAPABILITIES = {
   platformName: 'Android',
   'appium:automationName': 'UiAutomator2',
   'appium:deviceName': 'Android Emulator',
-  'appium:platformVersion': '14.0',
+  'appium:platformVersion': process.env.ANDROID_PLATFORM_VERSION || '14.0',
   'appium:app': process.env.ANDROID_APP_PATH || './builds/CodeSaga-v1.0.apk',
   'appium:appPackage': 'com.codesaga.app',
   'appium:appActivity': '.MainActivity',

@@ -19,7 +19,7 @@ export async function saveReport(suite, results, metadata = {}) {
   for(const r of results) detail.addRow([r.id,r.name,r.expected,r.status,r.actual,Math.round(r.durationMs||0)]);
   for(const sheet of workbook.worksheets){sheet.views=[{state:'frozen',ySplit:1}];sheet.getRow(1).font={bold:true,color:{argb:'FFFFFF'}};
     sheet.getRow(1).eachCell(c=>c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'14283E'}});
-    sheet.columns.forEach((c,i)=>c.width=i===0?25:i===5?18:45);sheet.eachRow(r=>{r.alignment={wrapText:true,vertical:'top'};r.height=42;});}
+    sheet.columns.forEach((c,i)=>c.width=i===0?25:i===5?18:45);sheet.eachRow(r=>{r.alignment={wrapText:true,vertical:'top'};r.height=Math.max(30,...r.values.slice(1).map((v,i)=>Math.ceil(String(v??'').length/(sheet.getColumn(i+1).width*.9))*14));});}
   await workbook.xlsx.writeFile(path.join(directory,`${suite}-report.xlsx`));
   console.log(JSON.stringify({suite,total:results.length,counts,metadata}));
   return evidence;

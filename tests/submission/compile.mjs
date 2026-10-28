@@ -26,6 +26,6 @@ const upstream=JSON.parse(process.env.UPSTREAM_RESULTS||'{}');
 for(const job of Object.values(upstream))if(job.result!=='success')invalid=true;
 summary.addRow(['Overall',invalid?'INCOMPLETE / FAILED':'4000 / 4000 PASSED']);
 summary.addRow(['Coverage units','UI route assertions, real-router/model unit cases, curriculum schema cases, candidate HTTP checks, measured load requests, attack-denial cases, and API-to-MongoDB journeys. Not 4000 independent product features.']);
-for(const sheet of workbook.worksheets){sheet.views=[{state:'frozen',ySplit:1}];sheet.getRow(1).font={bold:true,color:{argb:'FFFFFF'}};sheet.getRow(1).eachCell(c=>c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'14283E'}});sheet.columns.forEach((c,i)=>c.width=i===0?28:i===5?18:46);sheet.eachRow(r=>{r.height=42;r.alignment={wrapText:true,vertical:'top'};});}
+for(const sheet of workbook.worksheets){sheet.views=[{state:'frozen',ySplit:1}];sheet.getRow(1).font={bold:true,color:{argb:'FFFFFF'}};sheet.getRow(1).eachCell(c=>c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'14283E'}});sheet.columns.forEach((c,i)=>c.width=i===0?28:i===5?18:46);sheet.eachRow(r=>{r.height=Math.max(30,...r.values.slice(1).map((v,i)=>Math.ceil(String(v??'').length/(sheet.getColumn(i+1).width*.9))*14));r.alignment={wrapText:true,vertical:'top'};});}
 await workbook.xlsx.writeFile(path.join(base,'E2E-Master-Excel-Report.xlsx'));
 console.log(invalid?'Master report: execution missing or failures remain':'Master report: 4000 actual cases passed');if(invalid)process.exitCode=1;

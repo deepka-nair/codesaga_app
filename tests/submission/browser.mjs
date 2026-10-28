@@ -36,7 +36,11 @@ try {
   const state=()=>execute(()=>JSON.parse(localStorage.getItem('codesaga-storage'))?.state);
   const cases=browserCases.map(c=>({name:c.name,expected:c.property===0?'Anonymous session redirects to login':`Guest route contract ${c.property} for chapter ${c.chapter.id}`,run:async()=>{
     if(c.property===0){
-      await goto(base+'/login');await execute(()=>{localStorage.clear();sessionStorage.clear();});await goto(base+c.path);
+      await goto(base+'/worlds');
+      await wait(async()=>await execute(()=>Boolean(document.querySelector('[data-testid="btn-logout"]')||document.querySelector('[data-testid="input-email"]'))));
+      if(await execute(()=>Boolean(document.querySelector('[data-testid="btn-logout"]')))) await click('btn-logout');
+      await wait(async()=>await execute(()=>location.pathname==='/login'&&Boolean(document.querySelector('[data-testid="input-email"]'))&&!(JSON.parse(localStorage.getItem('codesaga-storage'))?.state?.isGuest)));
+      await goto(base+c.path);
       await wait(async()=>await execute(()=>Boolean(document.querySelector('[data-testid="input-email"]'))));
       assert.equal(await execute(()=>location.pathname),'/login');
     }else if(c.property===1){

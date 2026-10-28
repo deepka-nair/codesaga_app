@@ -71,7 +71,7 @@ jobs:
           git stash pop || true
           cd appium-tests
           npm install --package-lock-only --ignore-scripts --force
-          node -e "const p=require('./package-lock.json'); const v=p.packages['node_modules/appium']?.version; console.log('Regenerated Appium lock version:', v); if (!v || !v.startsWith('3.')) process.exit(1)"
+          node -e "const p=require('./package-lock.json'); const a=p.packages['node_modules/appium']?.version; const w=p.packages['node_modules/webdriverio']?.version; console.log('Regenerated versions:', {appium:a, webdriverio:w}); if (!a?.startsWith('3.') || !w?.startsWith('10.')) process.exit(1)"
           cd ..
           git add appium-tests/package-lock.json
           if ! git diff --cached --quiet; then

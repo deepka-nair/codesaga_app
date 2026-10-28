@@ -21,7 +21,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0b0f19"
-      }
+      },
+      "package": "com.codesaga.app"
     },
     "web": {
       "favicon": "./public/favicon.svg"

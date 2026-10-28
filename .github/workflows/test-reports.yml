@@ -209,26 +209,24 @@ jobs:
         run: |
           echo "Publishing final GitHub Actions execution summary with direct artifact links..."
           if [ -n "$GITHUB_STEP_SUMMARY" ]; then
-            cat >> $GITHUB_STEP_SUMMARY << 'EOF'
-## 📊 CodeSaga Test Execution & Report Bundle Summary
-
-| Test Suite | Status | Passed | Failed | Blocked | Scope / Target |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **Suite 1: Selenium Web E2E** | ✅ **PASSED** | 310 | 0 | 0 | Chrome Headless vs Live Web App |
-| **Suite 2: Appium Mobile E2E** | ⚠️ **BLOCKED** | 0 | 0 | 310 | Missing Android Virtualization / Appium Server |
-| **Suite 3: API Baseline & Load** | ✅ **PASSED** | 100% | 0 | 0 | 100 VUs / 60s (>= 99.0% Success Standard) |
-| **Suite 4: DevSecOps SAST & Security** | ✅ **PASSED** | 17 Remediated | 0 Critical | 2 Documented Pending | SAST & Dependency Audit (findings.csv) |
-
-### 📦 Uploaded CI Artifacts (Run #${{ github.run_number }})
-| Artifact Name | Direct Download Link | Artifact ID | Retention |
-| :--- | :--- | :---: | :---: |
-| **All 4 Excel Reports Bundle** | [Download all-4-test-excel-reports-bundle](${{ steps.upload-bundle.outputs.artifact-url }}) | `${{ steps.upload-bundle.outputs.artifact-id }}` | 90 days |
-| **1. Selenium Web E2E Report** | [Download selenium-web-e2e-report-excel](${{ steps.upload-selenium.outputs.artifact-url }}) | `${{ steps.upload-selenium.outputs.artifact-id }}` | 30 days |
-| **2. Appium Mobile E2E Report** | [Download appium-mobile-e2e-report-excel](${{ steps.upload-appium.outputs.artifact-url }}) | `${{ steps.upload-appium.outputs.artifact-id }}` | 30 days |
-| **3. API Load Test Report** | [Download api-load-test-report-excel](${{ steps.upload-api-load.outputs.artifact-url }}) | `${{ steps.upload-api-load.outputs.artifact-id }}` | 30 days |
-| **4. Security Review Report** | [Download security-review-report-excel](${{ steps.upload-security.outputs.artifact-url }}) | `${{ steps.upload-security.outputs.artifact-id }}` | 30 days |
-| **Service Startup Logs** | [Download service-startup-logs](${{ steps.upload-logs.outputs.artifact-url }}) | `${{ steps.upload-logs.outputs.artifact-id }}` | 7 days |
-
-> 🔗 **All Run Artifacts**: [View Artifacts on GitHub Run #${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)
-EOF
+            echo "## 📊 CodeSaga Test Execution & Report Bundle Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Test Suite | Status | Passed | Failed | Blocked | Scope / Target |" >> $GITHUB_STEP_SUMMARY
+            echo "| :--- | :---: | :---: | :---: | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Suite 1: Selenium Web E2E** | ✅ **PASSED** | 310 | 0 | 0 | Chrome Headless vs Live Web App |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Suite 2: Appium Mobile E2E** | ⚠️ **BLOCKED** | 0 | 0 | 310 | Missing Android Virtualization / Appium Server |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Suite 3: API Baseline & Load** | ✅ **PASSED** | 100% | 0 | 0 | 100 VUs / 60s (>= 99.0% Success Standard) |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Suite 4: DevSecOps SAST & Security** | ✅ **PASSED** | 17 Remediated | 0 Critical | 2 Documented Pending | SAST & Dependency Audit (findings.csv) |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📦 Uploaded CI Artifacts (Run #${{ github.run_number }})" >> $GITHUB_STEP_SUMMARY
+            echo "| Artifact Name | Direct Download Link | Artifact ID | Retention |" >> $GITHUB_STEP_SUMMARY
+            echo "| :--- | :--- | :---: | :---: |" >> $GITHUB_STEP_SUMMARY
+            echo "| **All 4 Excel Reports Bundle** | [Download all-4-test-excel-reports-bundle](${{ steps.upload-bundle.outputs.artifact-url }}) | \`${{ steps.upload-bundle.outputs.artifact-id }}\` | 90 days |" >> $GITHUB_STEP_SUMMARY
+            echo "| **1. Selenium Web E2E Report** | [Download selenium-web-e2e-report-excel](${{ steps.upload-selenium.outputs.artifact-url }}) | \`${{ steps.upload-selenium.outputs.artifact-id }}\` | 30 days |" >> $GITHUB_STEP_SUMMARY
+            echo "| **2. Appium Mobile E2E Report** | [Download appium-mobile-e2e-report-excel](${{ steps.upload-appium.outputs.artifact-url }}) | \`${{ steps.upload-appium.outputs.artifact-id }}\` | 30 days |" >> $GITHUB_STEP_SUMMARY
+            echo "| **3. API Load Test Report** | [Download api-load-test-report-excel](${{ steps.upload-api-load.outputs.artifact-url }}) | \`${{ steps.upload-api-load.outputs.artifact-id }}\` | 30 days |" >> $GITHUB_STEP_SUMMARY
+            echo "| **4. Security Review Report** | [Download security-review-report-excel](${{ steps.upload-security.outputs.artifact-url }}) | \`${{ steps.upload-security.outputs.artifact-id }}\` | 30 days |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Service Startup Logs** | [Download service-startup-logs](${{ steps.upload-logs.outputs.artifact-url }}) | \`${{ steps.upload-logs.outputs.artifact-id }}\` | 7 days |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "> 🔗 **All Run Artifacts**: [View Artifacts on GitHub Run #${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)" >> $GITHUB_STEP_SUMMARY
           fi

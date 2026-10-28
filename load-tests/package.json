@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test:load": "node baseline-load-test.js",
-    "start-server-and-test": "node start-and-test.js"
+    "test:auth-stress": "node auth-stress-test.js"
   },
   "dependencies": {
     "exceljs": "^4.4.0"

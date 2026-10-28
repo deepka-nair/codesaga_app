@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "mocha tests/login-tests.js --timeout 60000",
+    "test:runner": "powershell -ExecutionPolicy Bypass -File ../run-selenium-tests.ps1",
     "generate-report": "node scripts/generate-excel-report.js"
   },
   "dependencies": {

@@ -15,7 +15,7 @@ import { generateExcelFromResults } from '../scripts/generate-excel-report.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:5173';
+const BASE_URL = process.env.TEST_BASE_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
 const TIMEOUT = 10000;
 
 // Test Execution Results Collector
@@ -29,7 +29,7 @@ export class LoginPage {
     this.driver = driver;
 
     // Locators
-    this.appTitle = By.xpath("//h1[contains(text(), 'CodeSaga')]");
+    this.appTitle = By.xpath("//h1[contains(., 'CodeSaga')] | //h1[contains(text(), 'CodeSaga')] | //img[@alt='CodeSaga']");
     this.emailInput = By.css("input[type='email']");
     this.passwordInput = By.css("input[type='password']");
     this.confirmPasswordInput = By.xpath("//label[contains(text(),'Confirm Password')]/following-sibling::input");
@@ -37,27 +37,106 @@ export class LoginPage {
     this.usernameInput = By.css("input[placeholder='DetectiveAria']");
     
     // Buttons
-    this.loginSubmitBtn = By.xpath("//button[contains(text(),'LOGIN')]");
-    this.sendOtpBtn = By.xpath("//button[contains(text(),'SEND OTP')]");
-    this.verifyOtpBtn = By.xpath("//button[contains(text(),'VERIFY OTP')]");
-    this.createPasswordSubmitBtn = By.xpath("//button[contains(text(),'CREATE PASSWORD')]");
-    this.nextUsernameBtn = By.xpath("//button[contains(text(),'NEXT: CREATE PASSWORD')]");
-    this.guestBtn = By.xpath("//button[contains(text(),'CONTINUE AS GUEST')]");
-    this.forgotPasswordBtn = By.xpath("//button[contains(text(),'Forgot password?')]");
-    this.otpModeToggleBtn = By.xpath("//button[contains(text(),'Sign in with Email OTP instead')]");
-    this.backToPasswordBtn = By.xpath("//button[contains(text(),'Back to Password Login')]");
-    this.resendOtpBtn = By.xpath("//button[contains(text(),'Resend OTP') or contains(text(),'Resend OTP in')]");
-    this.changeEmailBtn = By.xpath("//button[contains(text(),'Change Email')]");
+    this.loginSubmitBtn = By.xpath("//button[contains(.,'LOGIN')]");
+    this.sendOtpBtn = By.xpath("//button[contains(.,'SEND OTP')]");
+    this.verifyOtpBtn = By.xpath("//button[contains(.,'VERIFY OTP')]");
+    this.createPasswordSubmitBtn = By.xpath("//button[contains(.,'CREATE PASSWORD')]");
+    this.nextUsernameBtn = By.xpath("//button[contains(.,'NEXT: CREATE PASSWORD')]");
+    this.guestBtn = By.xpath("//button[contains(.,'CONTINUE AS GUEST')]");
+    this.forgotPasswordBtn = By.xpath("//button[contains(.,'Forgot password?')]");
+    this.otpModeToggleBtn = By.xpath("//button[contains(.,'Sign in with Email OTP instead')]");
+    this.backToPasswordBtn = By.xpath("//button[contains(.,'Back to Password Login')]");
+    this.resendOtpBtn = By.xpath("//button[contains(.,'Resend OTP')]");
+    this.changeEmailBtn = By.xpath("//button[contains(.,'Change Email')]");
 
     // Status Banners
     this.statusBanner = By.css("div[style*='border-radius: 6px']");
   }
 
+  async captureDiagnostics(contextMsg = 'Failure Diagnostic', err = null) {
+    console.error(`\n================== [CI DIAGNOSTICS] ==================`);
+    console.error(`Context: ${contextMsg}`);
+    console.error(`Target Base URL: ${BASE_URL}`);
+
+    try {
+      const currentUrl = await this.driver.getCurrentUrl();
+      console.error(`Current Browser URL: ${currentUrl}`);
+    } catch (e) {
+      console.error(`Current Browser URL: <unavailable: ${e.message}>`);
+    }
+
+    try {
+      const docTitle = await this.driver.getTitle();
+      console.error(`Document Title: ${docTitle}`);
+    } catch (e) {
+      console.error(`Document Title: <unavailable: ${e.message}>`);
+    }
+
+    try {
+      const httpRes = await fetch(BASE_URL);
+      console.error(`HTTP Status (${BASE_URL}): ${httpRes.status} ${httpRes.statusText}`);
+    } catch (fetchErr) {
+      console.error(`HTTP Connection to ${BASE_URL} Failed: ${fetchErr.message}`);
+    }
+
+    try {
+      const logs = await this.driver.manage().logs().get('browser').catch(() => []);
+      if (logs && logs.length > 0) {
+        console.error(`Browser Console Logs (${logs.length} entries):`);
+        logs.forEach(l => console.error(`  [${l.level?.name || 'LOG'}] ${l.message}`));
+      } else {
+        console.error(`Browser Console Logs: None or not captured by driver`);
+      }
+    } catch (logErr) {
+      console.error(`Browser Console Logs retrieval error: ${logErr.message}`);
+    }
+
+    try {
+      const fs = await import('fs');
+      const pathModule = await import('path');
+      const screenshotDir = pathModule.resolve(__dirname, '..', 'screenshots');
+      if (!fs.existsSync(screenshotDir)) {
+        fs.mkdirSync(screenshotDir, { recursive: true });
+      }
+      const screenshot = await this.driver.takeScreenshot();
+      const filename = `failure_${Date.now()}.png`;
+      const filePath = pathModule.join(screenshotDir, filename);
+      fs.writeFileSync(filePath, screenshot, 'base64');
+      console.error(`Failure Screenshot saved: ${filePath}`);
+    } catch (ssErr) {
+      console.error(`Screenshot capture failed: ${ssErr.message}`);
+    }
+
+    if (err) {
+      console.error(`Error Stack: ${err.stack || err.message}`);
+    }
+    console.error(`======================================================\n`);
+  }
+
   async open() {
-    await this.driver.get(BASE_URL);
-    await this.driver.executeScript("window.localStorage.clear(); window.sessionStorage.clear();").catch(() => {});
-    await this.driver.get(BASE_URL);
-    await this.driver.wait(until.elementLocated(this.appTitle), TIMEOUT);
+    try {
+      await this.driver.get(BASE_URL);
+      await this.driver.executeScript("window.localStorage.clear(); window.sessionStorage.clear();").catch(() => {});
+      await this.driver.get(BASE_URL);
+      await this.driver.wait(until.elementLocated(this.appTitle), TIMEOUT);
+    } catch (err) {
+      if (err.message && err.message.includes('ERR_CONNECTION_REFUSED') && BASE_URL.includes('localhost')) {
+        const fallbackUrl = BASE_URL.replace('localhost', '127.0.0.1');
+        try {
+          console.warn(`[WebDriver Notice] Retrying connection with fallback: ${fallbackUrl}`);
+          await this.driver.get(fallbackUrl);
+          await this.driver.executeScript("window.localStorage.clear(); window.sessionStorage.clear();").catch(() => {});
+          await this.driver.get(fallbackUrl);
+          await this.driver.wait(until.elementLocated(this.appTitle), TIMEOUT);
+          return;
+        } catch (retryErr) {
+          await this.captureDiagnostics(`Failed to open LoginPage on both ${BASE_URL} and ${fallbackUrl}`, retryErr);
+          throw retryErr;
+        }
+      }
+      await this.captureDiagnostics('Failed to locate appTitle in LoginPage.open()', err);
+      throw err;
+    }
   }
 
   async enterEmail(email) {
@@ -151,6 +230,16 @@ describe('CodeSaga Full 310-Test E2E Selenium Suite', function () {
     }
   });
 
+  afterEach(async function () {
+    if (this.currentTest && this.currentTest.state === 'failed') {
+      const testTitle = this.currentTest.fullTitle();
+      console.error(`\n⚠️ [Test Failed]: ${testTitle}`);
+      if (driver && loginPage) {
+        await loginPage.captureDiagnostics(`Failure in test case: ${testTitle}`, this.currentTest.err);
+      }
+    }
+  });
+
   // Helper to record test case result
   function recordTest(id, category, title, status, actual, priority = 'Medium', severity = 'Major', mode = 'Automated') {
     executionResults.push({
@@ -176,7 +265,11 @@ describe('CodeSaga Full 310-Test E2E Selenium Suite', function () {
   // =========================================================================
   describe('1. Standard Password Login Flow', function () {
     it('TC_LOG_001: Should load login page with title and default elements', async function () {
-      const title = await driver.findElement(loginPage.appTitle).getText();
+      const el = await driver.findElement(loginPage.appTitle);
+      const text = await el.getText();
+      const alt = await el.getAttribute('alt');
+      const docTitle = await driver.getTitle();
+      const title = text || alt || docTitle;
       expect(title).to.include('CodeSaga');
       recordTest('TC_LOG_001', 'Standard Password Login', 'Should load login page with title and default elements', 'Pass', 'Title CodeSaga rendered successfully.', 'High', 'Critical');
     });

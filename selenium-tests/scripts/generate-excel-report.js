@@ -47,34 +47,25 @@ export async function generateExcelFromResults(testResults = []) {
     'Edge Cases, Performance & Stress'
   ];
 
-  // If no live results provided, generate full passing set of 310 cases
-  const finalCases = testResults.length >= 310 ? testResults : [];
-  if (finalCases.length < 310) {
-    let idCounter = 1;
-    const catCounts = [35, 40, 35, 30, 25, 20, 35, 25, 30, 20, 15];
-    categoriesList.forEach((catName, idx) => {
-      const count = catCounts[idx];
-      for (let i = 0; i < count; i++) {
-        const currentId = idCounter;
-        const tcId = `TC_LOG_${String(currentId).padStart(3, '0')}`;
-        finalCases.push({
-          id: tcId,
-          category: catName,
-          title: `Verify ${catName.toLowerCase()} test scenario #${i + 1}`,
-          preconditions: "1. CodeSaga Web Application running at http://localhost:5173\n2. Web Browser (Chrome Headless) active.",
-          steps: `1. Open CodeSaga login screen\n2. Perform test step #${i + 1}\n3. Assert DOM state`,
-          data: `TestInput_${currentId}`,
-          expected: `System handles ${catName} scenario #${i + 1} cleanly as expected.`,
-          actual: "Passed cleanly. Verified via Selenium Headless Chrome automation.",
-          status: "Pass",
-          priority: (i + 1) % 3 === 0 ? "High" : (i + 1) % 2 === 0 ? "Medium" : "Low",
-          severity: (i + 1) % 4 === 0 ? "Critical" : (i + 1) % 2 === 0 ? "Major" : "Minor",
-          mode: "Automated",
-          scriptRef: `login-tests.js#${tcId}`,
-          notes: "Selenium E2E automated test case."
-        });
-        idCounter++;
-      }
+  // Process actual execution results or record failure accurately
+  const finalCases = [...testResults];
+  if (finalCases.length === 0) {
+    // If suite setup failed before any test could execute, record exactly the 1 hook failure that Mocha reported
+    finalCases.push({
+      id: 'TC_INIT_000',
+      category: 'Suite Initialization',
+      title: 'Initialize Selenium WebDriver and verify CodeSaga web application connection',
+      preconditions: '1. Express API Backend on port 5000\n2. Vite Dev Server on port 5173\n3. Headless Chrome WebDriver',
+      steps: '1. Launch Chrome Headless\n2. Navigate to application base URL\n3. Assert login page renders app title',
+      data: 'http://localhost:5173',
+      expected: 'CodeSaga web application loads successfully and displays title.',
+      actual: 'FAILED: Suite setup hook failed before test cases could execute (e.g. net::ERR_CONNECTION_REFUSED). 0 test cases executed.',
+      status: 'Fail',
+      priority: 'High',
+      severity: 'Critical',
+      mode: 'Automated',
+      scriptRef: 'login-tests.js#before',
+      notes: 'Suite-level hook failure (0 tests passed, 1 hook failed).'
     });
   }
 

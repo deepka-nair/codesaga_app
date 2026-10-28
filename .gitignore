@@ -16,4 +16,9 @@ scratch/
 **/android/.gradle/
 **/android/build/
 **/android/app/build/
+*.b64
+android/*.b64
+android/*.cjs
+android/*.py
+android/*.txt
 

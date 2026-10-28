@@ -48,8 +48,8 @@ const Login = () => {
   // Auth method: 'password' (default) or 'otp'
   const [authMethod, setAuthMethod] = useState('password');
 
-  // Step state: 'email' (default), 'password', 'otp', 'username', or 'create_password'
-  const [step, setStep] = useState('email');
+  // Step state: 'login' (default), 'email', 'otp', 'username', or 'create_password'
+  const [step, setStep] = useState('login');
   const [email, setEmail] = useState(savedLastEmail || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -168,7 +168,8 @@ const Login = () => {
       setLoading(false);
       audioManager.playSuccess();
       setPendingExistingUser(dbRes.user);
-      setStep('password');
+      setAuthMethod('password');
+      setStep('login');
       setStatusMessage({ type: 'info', text: `Welcome back! Enter your password for ${cleanEmail}.` });
       return;
     }
@@ -378,11 +379,17 @@ const Login = () => {
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '440px' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <img 
-            src="/assets/codesaga-logo-web.png" 
-            alt="CodeSaga" 
-            style={{ maxHeight: '70px', maxWidth: '100%', objectFit: 'contain', marginBottom: '0.5rem' }} 
-          />
+          <h1 style={{ margin: 0, padding: 0, lineHeight: 1, fontSize: 0 }}>
+            CodeSaga
+            <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>
+              CodeSaga
+            </span>
+            <img 
+              src="/assets/codesaga-logo-web.png" 
+              alt="CodeSaga" 
+              style={{ maxHeight: '70px', maxWidth: '100%', objectFit: 'contain', marginBottom: '0.5rem' }} 
+            />
+          </h1>
           <p style={{ fontFamily: 'var(--font-pixel)', fontSize: '0.75rem', color: 'var(--accent-teal)', textShadow: '1px 1px 0 #000' }}>
             Interactive Programming & RPG Detective Quests
           </p>

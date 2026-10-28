@@ -88,10 +88,27 @@ export const extractAuthUser = (req) => {
 /**
  * In-memory sliding-window IP rate limiter for authentication endpoints.
  * Enforces 10 attempts per 15-minute window per IP with automatic memory cleanup.
+ * 
+ * SEC-02 Compliance:
+ * Production default is strictly 10 attempts per 15-minute window.
+ * In explicit non-production test/staging environments (NODE_ENV === 'test' or
+ * TEST_MODE === 'true'), process.env.AUTH_RATE_LIMIT_MAX can configure an elevated
+ * threshold if requested for specific test runs. It NEVER activates by default in production.
  */
 const loginAttempts = new Map();
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const MAX_LOGIN_ATTEMPTS = 10;
+const DEFAULT_MAX_LOGIN_ATTEMPTS = 10;
+
+const getMaxLoginAttempts = () => {
+  const isTestEnv = process.env.NODE_ENV === 'test' || process.env.TEST_MODE === 'true';
+  if (isTestEnv && process.env.AUTH_RATE_LIMIT_MAX) {
+    const parsed = parseInt(process.env.AUTH_RATE_LIMIT_MAX, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return DEFAULT_MAX_LOGIN_ATTEMPTS;
+};
 
 setInterval(() => {
   const now = Date.now();
@@ -117,7 +134,8 @@ export const authRateLimiter = (req, res, next) => {
   record.count++;
   loginAttempts.set(ip, record);
 
-  if (record.count > MAX_LOGIN_ATTEMPTS) {
+  const effectiveMax = getMaxLoginAttempts();
+  if (record.count > effectiveMax) {
     const retryAfterSec = Math.ceil((RATE_LIMIT_WINDOW_MS - (now - record.startTime)) / 1000);
     res.setHeader('Retry-After', retryAfterSec);
     return res.status(429).json({

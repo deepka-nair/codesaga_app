@@ -38,7 +38,7 @@ async function generateSecurityExcelReport() {
   summarySheet.addRow([]);
   summarySheet.addRow(['Application Name:', 'CodeSaga Full-Stack Platform', 'Audit Date:', new Date().toLocaleDateString()]);
   summarySheet.addRow(['Technology Stack:', 'Node.js, Express, React, Vite, MongoDB', 'DevSecOps Tools:', 'Semgrep, Gitleaks, Trivy, npm audit']);
-  summarySheet.addRow(['Target Scope:', 'Backend API, Authentication, Models, Routes', 'Remediation Status:', 'Remediated & Verified (20/20 Tests Passed)']);
+  summarySheet.addRow(['Target Scope:', 'Backend API, Authentication, Models, Dependencies', 'Remediation Status:', 'Partially Remediated (17/19 Fixed, 2 Documented Pending in Expo CLI)']);
 
   summarySheet.addRow([]);
   summarySheet.mergeCells('A8:G8');
@@ -53,13 +53,15 @@ async function generateSecurityExcelReport() {
   headRow.eachCell(c => c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '334155' } });
 
   const metrics = [
-    ['App Code — High (IDOR & Rate Limiting)', 2, 2, 0, 'REMEDIATED (Verified via Tests)'],
-    ['App Code — Medium (Headers & Validation)', 2, 2, 0, 'REMEDIATED (Verified via Tests)'],
-    ['App Code — Low (PII Logging & Error Leaks)', 2, 2, 0, 'REMEDIATED (Verified via Tests)'],
+    ['Application Code — High (SEC-01 IDOR, SEC-02 Rate Limiting)', 2, 2, 0, 'REMEDIATED (Verified via Tests)'],
+    ['Application Code — Medium (SEC-03 Headers, SEC-04 Input Validation)', 2, 2, 0, 'REMEDIATED (Verified via Tests)'],
+    ['Application Code — Low (SEC-05 PII Masking, SEC-06 Error Sanitization)', 2, 2, 0, 'REMEDIATED (Verified via Tests)'],
     ['Dependencies (SCA) — Critical (proxy-addr, shell-quote, form-data)', 3, 3, 0, 'REMEDIATED (0 Critical Remaining)'],
-    ['Dependencies (SCA) — High (Vite, body-parser, brace-expansion, source-map, serialize-js)', 9, 7, 2, 'PARTIALLY REMEDIATED (2 in Expo CLI)'],
-    ['Dependencies (SCA) — Moderate (qs, query-string, uuid)', 5, 5, 0, 'REMEDIATED (0 Moderate Remaining)'],
+    ['Dependencies (SCA) — High Remediated (Vite, body-parser, brace-expansion, source-map, serialize-js)', 5, 5, 0, 'REMEDIATED (5 Highs Patched)'],
+    ['Dependencies (SCA) — High Documented Pending (node-forge, zod in @expo/cli)', 2, 0, 2, 'DOCUMENTED PENDING (Retained: Breaking in Expo SDK 58)'],
+    ['Dependencies (SCA) — Moderate (qs, query-string, uuid)', 3, 3, 0, 'REMEDIATED (0 Moderate Remaining)'],
     ['Hardcoded Secrets (Gitleaks)', 0, 0, 0, 'CLEAN (0 Secrets Detected)'],
+    ['Total Findings Register (findings.csv)', 19, 17, 2, 'PARTIALLY REMEDIATED (17/19 Remediated, 2 Documented Pending)'],
     ['Critical Security Gate Policy', 0, 0, 0, 'PASSED (Zero Criticals)']
   ];
 
@@ -76,7 +78,7 @@ async function generateSecurityExcelReport() {
     }
   });
 
-  summarySheet.columns = [{ width: 44 }, { width: 14 }, { width: 14 }, { width: 22 }, { width: 34 }];
+  summarySheet.columns = [{ width: 80 }, { width: 14 }, { width: 14 }, { width: 22 }, { width: 45 }];
 
   // Sheet 2: Endpoint Inventory & Security Controls
   const detailSheet = workbook.addWorksheet('Endpoint Inventory', { views: [{ showGridLines: true }] });

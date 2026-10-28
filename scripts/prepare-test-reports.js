@@ -32,4 +32,9 @@ for (const item of reports) {
   }
 }
 
+if (count < reports.length) {
+  console.error(`❌ Error: Expected ${reports.length} reports, but only bundled ${count}/${reports.length}!`);
+  process.exit(1);
+}
+
 console.log(`🎉 Successfully bundled ${count}/4 Excel test reports in ${targetDir}`);

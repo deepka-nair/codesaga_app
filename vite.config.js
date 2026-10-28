@@ -184,6 +184,10 @@ function otpApiPlugin(env) {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
-    plugins: [react(), otpApiPlugin(env)]
+    plugins: [react(), otpApiPlugin(env)],
+    server: {
+      port: 5173,
+      host: true
+    }
   };
 });

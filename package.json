@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "mobile:start": "npx expo start",
     "mobile:android": "npx expo start --android",
-    "mobile:ios": "npx expo start --ios"
+    "mobile:ios": "npx expo start --ios",
+    "test:selenium": "powershell -ExecutionPolicy Bypass -File ./run-selenium-tests.ps1"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

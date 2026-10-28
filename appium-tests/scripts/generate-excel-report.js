@@ -69,54 +69,62 @@ export async function generateAppiumReportFromResults(testResults = []) {
     221: { title: "Verify context switching between NATIVE_APP and WEBVIEW contexts", steps: "1. Get contexts list via driver.getContexts()\n2. Switch to WEBVIEW_com.codesaga.app\n3. Execute JS DOM automation", expected: "Context switches seamlessly allowing webview DOM element manipulation.", priority: "High", severity: "Critical", status: "Pass" }
   };
 
-  const finalCases = testResults.length >= 310 ? testResults : [];
+  const finalCases = [...testResults];
 
   if (finalCases.length < 310) {
+    const isSuiteLevelFailure = finalCases.length === 0;
+    const existingIds = new Set(finalCases.map(tc => tc.id));
     let idCounter = 1;
     for (const cat of categories) {
       for (let i = 0; i < cat.count; i++) {
         const currentId = idCounter;
         const tcId = `TC_APP_${String(currentId).padStart(3, '0')}`;
         
-        let tc;
-        if (specificScenarios[currentId]) {
-          tc = {
-            id: tcId,
-            category: cat.name,
-            title: specificScenarios[currentId].title,
-            preconditions: "1. Appium Server 2.x running at http://127.0.0.1:4723\n2. Android Emulator (v14.0) or Expo Go booted.\n3. CodeSaga Mobile App package active.",
-            steps: specificScenarios[currentId].steps,
-            data: `Device: Android Emulator / Expo Go, OS: 14.0, Package: com.codesaga.app`,
-            expected: specificScenarios[currentId].expected,
-            actual: "Passed cleanly. Target mobile accessibility state and UI element verified via Appium UiAutomator2 / XCUITest.",
-            status: "Pass",
-            priority: specificScenarios[currentId].priority,
-            severity: specificScenarios[currentId].severity,
-            mode: "Automated",
-            scriptRef: `appium-e2e-tests.js#${tcId}`,
-            notes: "Automated Appium mobile E2E test case."
-          };
-        } else {
-          const subIndex = i + 1;
-          tc = {
-            id: tcId,
-            category: cat.name,
-            title: `Verify ${cat.name.toLowerCase()} mobile scenario #${subIndex} - functional check`,
-            preconditions: "1. Appium automation session active on mobile device.\n2. Clean app cache state.",
-            steps: `1. Launch CodeSaga mobile application\n2. Navigate to ${cat.name} module\n3. Execute mobile touch gesture #${subIndex}\n4. Assert element visibility & state`,
-            data: `MobileInput_${currentId}_Val`,
-            expected: `System handles ${cat.name} mobile scenario #${subIndex} correctly according to specs.`,
-            actual: "Passed cleanly. Mobile accessibility element bounds & UI state verified via Appium.",
-            status: "Pass",
-            priority: subIndex % 3 === 0 ? "High" : subIndex % 2 === 0 ? "Medium" : "Low",
-            severity: subIndex % 4 === 0 ? "Critical" : subIndex % 2 === 0 ? "Major" : "Minor",
-            mode: "Automated",
-            scriptRef: `appium-e2e-tests.js#${tcId}`,
-            notes: "Mobile E2E functional test case entry."
-          };
-        }
+        if (!existingIds.has(tcId)) {
+          let tc;
+          if (specificScenarios[currentId]) {
+            tc = {
+              id: tcId,
+              category: cat.name,
+              title: specificScenarios[currentId].title,
+              preconditions: "1. Appium Server 2.x running at http://127.0.0.1:4723\n2. Android Emulator (v14.0) or Expo Go booted.\n3. CodeSaga Mobile App package active.",
+              steps: specificScenarios[currentId].steps,
+              data: `Device: Android Emulator / Expo Go, OS: 14.0, Package: com.codesaga.app`,
+              expected: specificScenarios[currentId].expected,
+              actual: isSuiteLevelFailure
+                ? "FAILED: Appium mobile test suite failed during setup / initialization hook before test cases could execute."
+                : "BLOCKED: Test execution was blocked by an earlier failure in the suite.",
+              status: isSuiteLevelFailure ? "Fail" : "Blocked",
+              priority: specificScenarios[currentId].priority,
+              severity: specificScenarios[currentId].severity,
+              mode: "Automated",
+              scriptRef: `appium-e2e-tests.js#${tcId}`,
+              notes: isSuiteLevelFailure ? "Suite-level startup/setup hook failure." : "Blocked mobile test scenario."
+            };
+          } else {
+            const subIndex = i + 1;
+            tc = {
+              id: tcId,
+              category: cat.name,
+              title: `Verify ${cat.name.toLowerCase()} mobile scenario #${subIndex} - functional check`,
+              preconditions: "1. Appium automation session active on mobile device.\n2. Clean app cache state.",
+              steps: `1. Launch CodeSaga mobile application\n2. Navigate to ${cat.name} module\n3. Execute mobile touch gesture #${subIndex}\n4. Assert element visibility & state`,
+              data: `MobileInput_${currentId}_Val`,
+              expected: `System handles ${cat.name} mobile scenario #${subIndex} correctly according to specs.`,
+              actual: isSuiteLevelFailure
+                ? "FAILED: Appium mobile test suite failed during setup / initialization hook before test cases could execute."
+                : "BLOCKED: Test execution was blocked by an earlier failure in the suite.",
+              status: isSuiteLevelFailure ? "Fail" : "Blocked",
+              priority: subIndex % 3 === 0 ? "High" : subIndex % 2 === 0 ? "Medium" : "Low",
+              severity: subIndex % 4 === 0 ? "Critical" : subIndex % 2 === 0 ? "Major" : "Minor",
+              mode: "Automated",
+              scriptRef: `appium-e2e-tests.js#${tcId}`,
+              notes: isSuiteLevelFailure ? "Suite-level startup/setup hook failure." : "Blocked mobile test scenario."
+            };
+          }
 
-        finalCases.push(tc);
+          finalCases.push(tc);
+        }
         idCounter++;
       }
     }

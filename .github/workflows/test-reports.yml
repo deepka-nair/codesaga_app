@@ -43,6 +43,15 @@ jobs:
           echo "Installing API Load test dependencies..."
           cd load-tests && (npm ci || npm install) && cd ..
 
+      - name: 3b. Publish regenerated Appium lockfile for review
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: appium-regenerated-package-lock
+          path: appium-tests/package-lock.json
+          retention-days: 7
+          if-no-files-found: error
+
       - name: 4. Start Express Backend & Vite Frontend Services
         env:
           PORT: 5000

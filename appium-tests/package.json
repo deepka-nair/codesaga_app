@@ -13,21 +13,12 @@
     "webdriverio": "^9.10.0"
   },
   "devDependencies": {
-    "appium": "^2.16.0",
+    "appium": "^3.9.0",
     "chai": "^5.2.0",
     "mocha": "^11.1.0"
   },
   "overrides": {
     "form-data": "^4.0.6",
-    "uuid": "^11.1.1",
-    "get-uri": {
-      "basic-ftp": "^6.2.1"
-    },
-    "@appium/support": {
-      "glob": "^10.5.0"
-    },
-    "@wdio/config": {
-      "glob": "^10.5.0"
-    }
+    "uuid": "^11.1.1"
   }
 }

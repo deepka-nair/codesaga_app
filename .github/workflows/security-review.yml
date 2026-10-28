@@ -127,25 +127,38 @@ jobs:
           echo "| **NPM Audit** | Software Composition Analysis | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
           echo "| **DevSecOps Reports** | Excel & Markdown Reports | ✅ Generated |" >> $GITHUB_STEP_SUMMARY
 
-      - name: 11. Enforce High-and-Critical Dependency Security Gate
+      - name: 11. Enforce High-and-Critical Dependency Security Gate Across All Scopes
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          const report = JSON.parse(fs.readFileSync('npm-audit-results.json', 'utf8'));
-          if (report.error || !report.metadata?.vulnerabilities || !report.vulnerabilities) {
-            console.error('Dependency audit did not produce a valid report; failing closed.');
-            process.exit(1);
+          const scopes = [
+            ['root application', 'npm-audit-results.json'],
+            ['Selenium test tooling', 'selenium-npm-audit-results.json'],
+            ['Appium test tooling', 'appium-npm-audit-results.json']
+          ];
+          let blockedCount = 0;
+          for (const [scope, path] of scopes) {
+            let report;
+            try { report = JSON.parse(fs.readFileSync(path, 'utf8')); }
+            catch { console.error(`Missing or invalid audit report for ${scope}: ${path}`); process.exitCode = 1; continue; }
+            const totals = report.metadata?.vulnerabilities;
+            if (report.error || !totals || !report.vulnerabilities) {
+              console.error(`Audit did not produce a valid report for ${scope}; failing closed.`);
+              process.exitCode = 1;
+              continue;
+            }
+            console.log(`${scope}: ${totals.critical} critical, ${totals.high} high, ${totals.moderate} moderate, ${totals.low} low.`);
+            const blocked = Object.entries(report.vulnerabilities)
+              .filter(([, item]) => item.severity === 'critical' || item.severity === 'high');
+            blockedCount += blocked.length;
+            for (const [name, item] of blocked) console.error(`BLOCKED [${scope}] ${name}: ${item.severity}`);
           }
-          const blocked = Object.entries(report.vulnerabilities)
-            .filter(([, item]) => item.severity === 'critical' || item.severity === 'high');
-          const totals = report.metadata.vulnerabilities;
-          console.log(`npm audit totals: ${totals.critical} critical, ${totals.high} high, ${totals.moderate} moderate, ${totals.low} low.`);
-          if (blocked.length) {
-            console.error('High/Critical dependency advisories block this workflow:');
-            for (const [name, item] of blocked) console.error(`- ${name}: ${item.severity}`);
-            process.exit(1);
+          if (blockedCount) {
+            console.error(`Security gate failed: ${blockedCount} high/critical package findings remain across audited scopes.`);
+            process.exitCode = 1;
+          } else if (!process.exitCode) {
+            console.log('High-and-critical dependency gate passed for all three scopes.');
           }
-          console.log('High-and-critical dependency gate passed.');
           NODE
 
       - name: 12. Upload Security Reports & Excel Artifacts

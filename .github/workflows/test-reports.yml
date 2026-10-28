@@ -124,16 +124,19 @@ jobs:
           node scripts/generate-security-excel-report.js
 
       - name: 9. Bundle All 4 Excel Reports into test-reports/ Directory
+        if: always()
         run: |
           echo "Bundling generated Excel test reports..."
           node scripts/prepare-test-reports.js
 
       - name: 10. Upload Combined Artifact (all-4-test-excel-reports-bundle)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: all-4-test-excel-reports-bundle
           path: test-reports/*.xlsx
           retention-days: 90
+          if-no-files-found: ignore
 
       - name: 11. Upload Individual Artifact - Selenium Web Excel Report
         if: always()

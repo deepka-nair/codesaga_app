@@ -187,16 +187,43 @@ describe('CodeSaga Full 310-Test E2E Selenium Suite', function () {
   let loginPage;
 
   before(async function () {
-    const options = new chrome.Options();
-    options.addArguments('--headless=new');
-    options.addArguments('--disable-gpu');
-    options.addArguments('--no-sandbox');
-    options.addArguments('--disable-dev-shm-usage');
-    options.addArguments('--window-size=1920,1080');
+    try {
+      const options = new chrome.Options();
+      options.addArguments('--headless=new');
+      options.addArguments('--disable-gpu');
+      options.addArguments('--no-sandbox');
+      options.addArguments('--disable-dev-shm-usage');
+      options.addArguments('--window-size=1920,1080');
 
-    driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
-    loginPage = new LoginPage(driver);
-    await loginPage.open();
+      driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
+      loginPage = new LoginPage(driver);
+      await loginPage.open();
+    } catch (err) {
+      console.error("[Suite Initialization Failure]:", err.message);
+      if (generateExcelFromResults) {
+        try {
+          await generateExcelFromResults([{
+            id: 'TC_INIT_000',
+            category: 'Suite Initialization',
+            title: 'Initialize Selenium WebDriver and verify CodeSaga web application connection',
+            preconditions: '1. Express API Backend on port 5000\n2. Vite Dev Server on port 5173\n3. Headless Chrome WebDriver',
+            steps: '1. Launch Chrome Headless\n2. Navigate to application base URL\n3. Assert login page renders app title',
+            data: BASE_URL,
+            expected: 'Application renders login screen cleanly.',
+            actual: `FAILED: Initialization failed: ${err.message}`,
+            status: 'Fail',
+            priority: 'High',
+            severity: 'Critical',
+            mode: 'Automated',
+            scriptRef: 'login-tests.js#before',
+            notes: `Initialization error stack: ${err.stack || err.message}`
+          }]);
+        } catch (repErr) {
+          console.warn("Could not generate Excel report on init failure:", repErr.message);
+        }
+      }
+      throw err;
+    }
   });
 
   after(async function () {
@@ -236,6 +263,30 @@ describe('CodeSaga Full 310-Test E2E Selenium Suite', function () {
       console.error(`\n⚠️ [Test Failed]: ${testTitle}`);
       if (driver && loginPage) {
         await loginPage.captureDiagnostics(`Failure in test case: ${testTitle}`, this.currentTest.err);
+      }
+      const match = this.currentTest.title.match(/(TC_LOG_\d+)/);
+      const tcId = match ? match[1] : `TC_FAIL_${executionResults.length + 1}`;
+      const existingIdx = executionResults.findIndex(r => r.id === tcId);
+      const failEntry = {
+        id: tcId,
+        category: this.currentTest.parent?.title || 'Selenium E2E Tests',
+        title: this.currentTest.title,
+        preconditions: "1. CodeSaga Web Application running at http://localhost:5173\n2. Selenium Headless Chrome active.",
+        steps: `1. Open CodeSaga login screen\n2. Execute test scenario ${tcId}\n3. Assert DOM element state`,
+        data: `TestInput_${tcId}`,
+        expected: "Test assertions pass without error.",
+        actual: `FAILED: ${this.currentTest.err?.message || 'Assertion failed'}`,
+        status: 'Fail',
+        priority: 'High',
+        severity: 'Critical',
+        mode: 'Automated',
+        scriptRef: `login-tests.js#${tcId}`,
+        notes: `Failure details: ${this.currentTest.err?.stack || this.currentTest.err?.message}`
+      };
+      if (existingIdx >= 0) {
+        executionResults[existingIdx] = failEntry;
+      } else {
+        executionResults.push(failEntry);
       }
     }
   });

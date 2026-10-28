@@ -9,6 +9,7 @@ import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { generateLoadTestExcelReport } from './scripts/generate-excel-report.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -436,6 +437,12 @@ ${endpointTable}
   };
   fs.writeFileSync(path.join(__dirname, 'load-test-summary.json'), JSON.stringify(summaryData, null, 2), 'utf8');
 
+  try {
+    await generateLoadTestExcelReport();
+  } catch (repErr) {
+    console.warn("Could not generate Excel report inside baseline:", repErr.message);
+  }
+
   return { rps, avgMs, minMs, maxMs, totalRequests: stats.totalRequests, errorRatePct };
 }
 
@@ -445,7 +452,7 @@ runBaselineLoadTest().then((metrics) => {
     console.error(`\n❌ API Baseline Load Test FAILED: Error rate (${metrics.errorRatePct}%) exceeds 1.0% allowable limit (Success rate must be >= 99.0%).`);
     process.exit(1);
   }
-}).catch(err => {
+}).catch(async err => {
   console.error("❌ Error running baseline load test:", err);
   const summaryJsonPath = path.join(__dirname, 'load-test-summary.json');
   try {
@@ -455,6 +462,7 @@ runBaselineLoadTest().then((metrics) => {
       error: err.message || String(err),
       timestamp: new Date().toISOString()
     }, null, 2), 'utf8');
+    await generateLoadTestExcelReport();
   } catch {}
   process.exit(1);
 });

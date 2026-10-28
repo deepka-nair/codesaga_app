@@ -32,9 +32,10 @@ for (const item of reports) {
   }
 }
 
-if (count < reports.length) {
-  console.error(`❌ Error: Expected ${reports.length} reports, but only bundled ${count}/${reports.length}!`);
-  process.exit(1);
+if (count === 0) {
+  console.warn("⚠️ Warning: No test reports were found to bundle.");
+} else if (count < reports.length) {
+  console.warn(`⚠️ Partial bundle: Preserved ${count}/${reports.length} available test reports in ${targetDir}`);
+} else {
+  console.log(`🎉 Successfully bundled all ${count}/${reports.length} Excel test reports in ${targetDir}`);
 }
-
-console.log(`🎉 Successfully bundled ${count}/4 Excel test reports in ${targetDir}`);

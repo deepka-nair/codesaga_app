@@ -32,6 +32,7 @@ export async function executeCases(suite, cases, metadata, cleanup = async()=>{}
       const c=cases[i],started=performance.now();
       try { const actual=await c.run();results.push({id:`${suite}-${String(i+1).padStart(3,'0')}`,name:c.name,expected:c.expected,status:'Passed',actual:actual||'All scenario assertions passed.',durationMs:c.measuredDurationMs??performance.now()-started}); }
       catch(error){results.push({id:`${suite}-${String(i+1).padStart(3,'0')}`,name:c.name,expected:c.expected,status:'Failed',actual:error.stack||error.message,durationMs:c.measuredDurationMs??performance.now()-started});console.error(`${suite} case ${i+1}: ${error.message}`);}
+      if((i+1)%50===0)console.log(`${suite}: ${i+1}/${cases.length} executed; ${results.filter(r=>r.status==='Failed').length} failures`);
     }
   }finally {try{await cleanup();}catch(error){metadata.cleanupError=error.message;process.exitCode=1;}await saveReport(suite,results,metadata); }
   if(results.length!==500 || results.some(r=>r.status!=='Passed')) process.exitCode=1;

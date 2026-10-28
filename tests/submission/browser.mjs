@@ -28,7 +28,14 @@ try {
     const {APPIUM_SERVER_CONFIG,ANDROID_CAPABILITIES}=await import('../../appium-tests/config/appium.config.js');
     const {enterWebView}=await import('../../appium-tests/tests/webview.js');
     driver=await remote({...APPIUM_SERVER_CONFIG,capabilities:ANDROID_CAPABILITIES});await enterWebView(driver);
-    base='https://appassets.androidplatform.net';goto=url=>driver.url(url);execute=(fn,...args)=>driver.execute(fn,...args);
+    base='https://appassets.androidplatform.net';execute=(fn,...args)=>driver.execute(fn,...args);
+    // Exercise the real BrowserRouter without repeatedly reloading the APK's entire JS/assets.
+    // HTTP deep-link fallback is independently exercised by the 500 deployment checks.
+    goto=url=>execute(route=>{
+      window.history.pushState(null,'',route);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    },new URL(url).pathname);
+    metadata.navigation='Android uses real SPA route transitions after a real cold Appium launch; HTTP fallback is covered separately.';
     wait=fn=>driver.waitUntil(fn,{timeout:20000,interval:250});
     click=async id=>{const e=await driver.$(`[data-testid="${id}"]`);await e.scrollIntoView();await e.click();};
   }else throw new Error('Unknown browser suite');
@@ -41,7 +48,7 @@ try {
       if(await execute(()=>Boolean(document.querySelector('[data-testid="btn-logout"]')))) await click('btn-logout');
       await wait(async()=>await execute(()=>location.pathname==='/login'&&Boolean(document.querySelector('[data-testid="input-email"]'))&&!(JSON.parse(localStorage.getItem('codesaga-storage'))?.state?.isGuest)));
       await goto(base+c.path);
-      await wait(async()=>await execute(()=>Boolean(document.querySelector('[data-testid="input-email"]'))));
+      await wait(async()=>await execute(()=>location.pathname==='/login'&&Boolean(document.querySelector('[data-testid="input-email"]'))));
       assert.equal(await execute(()=>location.pathname),'/login');
     }else if(c.property===1){
       await click('btn-guest-play');await wait(async()=>await execute(()=>location.pathname==='/worlds'));

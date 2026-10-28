@@ -1,0 +1,401 @@
+name: CodeSaga — 8 Suites × 500 Tests + Master Excel
+'on':
+  push:
+    branches:
+    - main
+    - master
+    - security/**
+  workflow_dispatch: {}
+  workflow_call: {}
+permissions:
+  contents: read
+env:
+  SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+jobs:
+  selenium-web:
+    name: 🌐 Selenium Web Tests (500)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      AUTH_RATE_LIMIT_MAX: '10000'
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      with:
+        node-version: 22
+        cache: npm
+    - name: Install locked dependencies
+      run: npm ci
+    - name: Set up Chrome
+      uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4
+      with:
+        chrome-version: stable
+    - name: Install Selenium dependencies
+      run: npm --prefix selenium-tests ci
+    - name: Build candidate web application
+      run: npm run build
+    - name: Execute 500 real cases and write Excel
+      run: 'mkdir -p submission-reports
+
+        set -o pipefail
+
+        node tests/submission/browser.mjs selenium-web | tee submission-reports/selenium-web.log'
+    - name: Upload individual Excel report and evidence
+      if: ${{ always() }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: selenium-web-report
+        path: 'submission-reports/selenium-web/
+
+          submission-reports/selenium-web.log'
+        if-no-files-found: error
+        retention-days: 30
+  appium-android:
+    name: 📱 Appium Android Tests (500)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      with:
+        node-version: 22
+        cache: npm
+    - name: Set up Java for Android build
+      uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165
+      with:
+        distribution: temurin
+        java-version: '17'
+    - name: Install JavaScript dependencies
+      run: 'npm ci
+
+        npm --prefix appium-tests ci
+
+        '
+    - name: Build current web assets for the existing Android WebView app
+      run: "npm run build\nrm -rf android/app/src/main/assets\nmkdir -p android/app/src/main/assets\ncp -R dist/. android/app/src/main/assets/\n\
+        printf 'sdk.dir=%s\\n' \"$ANDROID_HOME\" > android/local.properties\nmkdir -p \"$HOME/.android\"\nif [ ! -f \"$HOME/.android/debug.keystore\"\
+        \ ]; then\n  keytool -genkeypair -keystore \"$HOME/.android/debug.keystore\" -storepass android -alias androiddebugkey -keypass android\
+        \ -keyalg RSA -validity 10000 -dname \"CN=Android Debug,O=Android,C=US\"\nfi\n"
+    - name: Build CodeSaga debug APK (retry transient Maven timeouts)
+      run: "cd android\n# React Native's Android AARs are large; Maven Central can intermittently\n# time out on hosted runners. Retry while preserving\
+        \ Gradle's downloaded cache.\nfor attempt in 1 2 3; do\n  echo \"Android build attempt $attempt/3\"\n  if java -classpath gradle/wrapper/gradle-wrapper.jar\
+        \ org.gradle.wrapper.GradleWrapperMain assembleDebug --no-daemon \\\n    -Dorg.gradle.internal.http.socketTimeout=120000 \\\n    -Dorg.gradle.internal.http.connectionTimeout=60000;\
+        \ then\n    exit 0\n  fi\n  if [ \"$attempt\" -lt 3 ]; then\n    echo \"Gradle build failed; waiting 15 seconds before retry.\"\n    sleep\
+        \ 15\n  fi\ndone\necho \"Android build failed after three attempts.\"\nexit 1\n"
+    - name: Enable hardware acceleration for Android emulator
+      run: 'echo ''KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"'' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+
+        sudo udevadm control --reload-rules
+
+        sudo udevadm trigger --name-match=kvm
+
+        '
+    - name: Run Appium smoke suite on Android emulator
+      uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+      with:
+        api-level: 35
+        target: google_apis
+        arch: x86_64
+        profile: pixel_6
+        disable-animations: true
+        script: bash scripts/run-android-smoke.sh
+    - name: Upload Android evidence
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: appium-android-report
+        path: 'submission-reports/
+
+          /tmp/codesaga-appium.log
+
+          /tmp/codesaga-logcat.log
+
+          android/app/build/outputs/apk/debug/app-debug.apk'
+        if-no-files-found: error
+        retention-days: 30
+    env:
+      RUN_SUBMISSION_APPIUM: '1'
+  unit-api:
+    name: 🧪 Unit API Tests (500)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      AUTH_RATE_LIMIT_MAX: '10000'
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      with:
+        node-version: 22
+        cache: npm
+    - name: Install locked dependencies
+      run: npm ci
+    - name: Execute 500 real cases and write Excel
+      run: 'mkdir -p submission-reports
+
+        set -o pipefail
+
+        node tests/submission/run.mjs unit-api | tee submission-reports/unit-api.log'
+    - name: Upload individual Excel report and evidence
+      if: ${{ always() }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: unit-api-report
+        path: 'submission-reports/unit-api/
+
+          submission-reports/unit-api.log'
+        if-no-files-found: error
+        retention-days: 30
+  validation:
+    name: ✅ Validation Tests (500)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      AUTH_RATE_LIMIT_MAX: '10000'
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      with:
+        node-version: 22
+        cache: npm
+    - name: Install locked dependencies
+      run: npm ci
+    - name: Execute 500 real cases and write Excel
+      run: 'mkdir -p submission-reports
+
+        set -o pipefail
+
+        node tests/submission/run.mjs validation | tee submission-reports/validation.log'
+    - name: Upload individual Excel report and evidence
+      if: ${{ always() }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: validation-report
+        path: 'submission-reports/validation/
+
+          submission-reports/validation.log'
+        if-no-files-found: error
+        retention-days: 30
+  deployment:
+    name: 🚀 Deployment Status Tests (500)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      AUTH_RATE_LIMIT_MAX: '10000'
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      with:
+        node-version: 22
+        cache: npm
+    - name: Install locked dependencies
+      run: npm ci
+    - name: Build candidate web application
+      run: npm run build
+    - name: Execute 500 real cases and write Excel
+      run: 'mkdir -p submission-reports
+
+        set -o pipefail
+
+        node tests/submission/run.mjs deployment | tee submission-reports/deployment.log'
+    - name: Upload individual Excel report and evidence
+      if: ${{ always() }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: deployment-report
+        path: 'submission-reports/deployment/
+
+          submission-reports/deployment.log'
+        if-no-files-found: error
+        retention-days: 30
+  load:
+    name: ⚡ Load Performance Tests (500)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      AUTH_RATE_LIMIT_MAX: '10000'
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      with:
+        node-version: 22
+        cache: npm
+    - name: Install locked dependencies
+      run: npm ci
+    - name: Execute 500 real cases and write Excel
+      run: 'mkdir -p submission-reports
+
+        set -o pipefail
+
+        node tests/submission/run.mjs load | tee submission-reports/load.log'
+    - name: Upload individual Excel report and evidence
+      if: ${{ always() }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: load-report
+        path: 'submission-reports/load/
+
+          submission-reports/load.log'
+        if-no-files-found: error
+        retention-days: 30
+  vulnerability:
+    name: 🔒 Vulnerability Tests (500)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      AUTH_RATE_LIMIT_MAX: '10000'
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        fetch-depth: 0
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      with:
+        node-version: 22
+        cache: npm
+    - name: Install locked dependencies
+      run: npm ci
+    - name: Verify authentication ownership and OTP regressions
+      run: node scripts/test-authentication-ownership.mjs
+    - name: Verify production-default rate limiting harness
+      run: AUTH_RATE_LIMIT_MAX=10 node scripts/test-security-authorization.mjs
+    - name: Execute 500 real cases and write Excel
+      run: 'mkdir -p submission-reports
+
+        set -o pipefail
+
+        node tests/submission/run.mjs vulnerability | tee submission-reports/vulnerability.log'
+    - name: Collect dependency evidence and reconcile security Excel
+      run: 'node scripts/collect-security-evidence.js
+
+        node scripts/generate-security-excel-report.js
+
+        node scripts/verify-submission-reports.mjs
+
+        node --input-type=module -e "import fs from ''node:fs'';const r=JSON.parse(fs.readFileSync(''Vulnerability Test Results/evidence/security-summary.json''));if(r.groups.at(-1).pending||r.audits.some(a=>a.critical||a.high))process.exit(1)"'
+    - name: Scan source with Semgrep (generated APK assets excluded; source remains scanned)
+      run: 'python3 -m pip install semgrep --break-system-packages
+
+        semgrep scan --config p/security-audit --config p/owasp-top-ten --exclude android/app/src/main/assets/ --json --output submission-reports/semgrep-results.json
+
+        node --input-type=module -e "import fs from ''node:fs'';const r=JSON.parse(fs.readFileSync(''submission-reports/semgrep-results.json''));console.log(''Semgrep:'',r.results.length,''findings;'',r.errors.length,''scanner
+        errors'');if(r.errors.length)process.exit(1)"'
+    - name: Scan repository history for secrets
+      run: 'curl -fsSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz | tar -xz -C /tmp
+
+        /tmp/gitleaks detect --source=. --report-format=json --report-path=submission-reports/gitleaks-results.json --exit-code=1'
+    - name: Upload individual Excel report and evidence
+      if: ${{ always() }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: vulnerability-report
+        path: 'submission-reports/vulnerability/
+
+          submission-reports/vulnerability.log
+
+          Vulnerability Test Results/
+
+          submission-reports/semgrep-results.json
+
+          submission-reports/gitleaks-results.json'
+        if-no-files-found: error
+        retention-days: 30
+  full-e2e:
+    name: 🔄 Full E2E Tests (500)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      AUTH_RATE_LIMIT_MAX: '10000'
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      with:
+        node-version: 22
+        cache: npm
+    - name: Install locked dependencies
+      run: npm ci
+    - name: Execute 500 real cases and write Excel
+      run: 'mkdir -p submission-reports
+
+        set -o pipefail
+
+        node tests/submission/run.mjs full-e2e | tee submission-reports/full-e2e.log'
+    - name: Upload individual Excel report and evidence
+      if: ${{ always() }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: full-e2e-report
+        path: 'submission-reports/full-e2e/
+
+          submission-reports/full-e2e.log'
+        if-no-files-found: error
+        retention-days: 30
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+        - 27017:27017
+        options: --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping:1})'" --health-interval 10s --health-timeout 5s --health-retries
+          10
+  compile-master:
+    name: 📊 Compile Master Excel Report & Upload
+    runs-on: ubuntu-24.04
+    if: ${{ always() }}
+    needs:
+    - selenium-web
+    - appium-android
+    - unit-api
+    - validation
+    - deployment
+    - load
+    - vulnerability
+    - full-e2e
+    env:
+      UPSTREAM_RESULTS: ${{ toJSON(needs) }}
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      with:
+        node-version: 22
+        cache: npm
+    - name: Install report dependencies
+      run: npm ci
+    - name: Download all suite reports
+      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+      with:
+        pattern: '*-report'
+        path: submission-reports
+        merge-multiple: false
+    - name: Compile and reconcile 4000 execution records
+      run: node tests/submission/compile.mjs
+    - name: Upload master Excel workbook
+      if: ${{ always() }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: E2E-Master-Excel-Report
+        path: submission-reports/E2E-Master-Excel-Report.xlsx
+        if-no-files-found: error
+        retention-days: 90

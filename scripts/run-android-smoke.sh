@@ -18,5 +18,9 @@ for service in http://127.0.0.1:4723/status; do
   done
   curl -fsS "$service"
 done
-cd appium-tests
-npx mocha tests/mobile-smoke-tests.js tests/appium-e2e-tests.js --timeout 180000
+if [ "${RUN_SUBMISSION_APPIUM:-0}" = "1" ]; then
+  node tests/submission/browser.mjs appium-android
+else
+  cd appium-tests
+  npx mocha tests/mobile-smoke-tests.js tests/appium-e2e-tests.js --timeout 180000
+fi

@@ -56,7 +56,7 @@ export async function getUserFromApi(email) {
   }
 
   try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}`);
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}`, { headers: getAuthHeaders() });
     if (!res.ok) {
       return { success: false, message: `Server error (${res.status})` };
     }
@@ -147,7 +147,7 @@ export async function setPasswordApi(email, password) {
   try {
     const res = await fetchWithRetry(`${API_BASE_URL}/api/users/set-password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ email: cleanEmail, password })
     });
     const data = await res.json();
@@ -173,7 +173,7 @@ export async function recordLoginInApi(email) {
   try {
     const res = await fetchWithRetry(`${API_BASE_URL}/api/users/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ email: cleanEmail })
     });
     if (!res.ok) return { success: false };

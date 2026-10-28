@@ -1,10 +1,6 @@
 name: Security Review & DevSecOps Automation
 
 "on":
-  push:
-    branches: [ main, master, 'security/**' ]
-  pull_request:
-    branches: [ main, master ]
   schedule:
     - cron: '0 2 * * 1'
   workflow_dispatch:
@@ -71,6 +67,8 @@ jobs:
         run: |
           set -o pipefail
           node scripts/test-security-authorization.mjs | tee 'Vulnerability Test Results/evidence/security-regression.log'
+      - name: Verify real production-router account ownership
+        run: NODE_ENV=test AUTH_RATE_LIMIT_MAX=10000 node scripts/test-authentication-ownership.mjs
       - name: 9. Generate Security & Excel Reports
         run: |
           echo "Generating DevSecOps reports..."
@@ -92,7 +90,7 @@ jobs:
         run: |
           echo "Running Semgrep SAST scan..."
           python3 -m pip install semgrep --break-system-packages
-          semgrep scan --config "p/security-audit" --config "p/owasp-top-ten" --json --output semgrep-results.json
+          semgrep scan --config "p/security-audit" --config "p/owasp-top-ten" --exclude android/app/src/main/assets/ --json --output semgrep-results.json
 
       - name: 7. Run Trivy Filesystem Vulnerability Scan
         if: ${{ !cancelled() }}

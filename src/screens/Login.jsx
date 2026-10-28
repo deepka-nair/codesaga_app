@@ -164,7 +164,7 @@ const Login = () => {
     // Check database to see if user exists and has a password
     const dbRes = await getUserFromApi(cleanEmail);
 
-    if (dbRes.success && dbRes.exists && dbRes.hasPassword) {
+    if (dbRes.success && dbRes.exists && dbRes.hasPassword && !isForgotPassword) {
       setLoading(false);
       audioManager.playSuccess();
       setPendingExistingUser(dbRes.user);
@@ -175,7 +175,7 @@ const Login = () => {
     }
 
     // New user or existing user without password -> Send OTP
-    setStatusMessage({ type: 'info', text: 'Sending OTP... 📩 Dispatching EmailJS OTP' });
+    setStatusMessage({ type: 'info', text: 'Sending OTP... 📩 Dispatching verification email' });
     audioManager.playNotification();
 
     const res = await sendEmailOTP(cleanEmail);
@@ -231,8 +231,12 @@ const Login = () => {
           });
         } else {
           // EXISTING USER WITH PASSWORD: log in immediately
-          recordUserLoginInApi(cleanEmail);
-          const loadedUser = dbRes.user;
+          const verifiedLogin = await recordUserLoginInApi(cleanEmail);
+          if (!verifiedLogin.success || !verifiedLogin.token) {
+            setStatusMessage({ type: 'error', text: verifiedLogin.message || 'Server verification failed. Request a new code.' });
+            return;
+          }
+          const loadedUser = verifiedLogin.user || dbRes.user;
           const sessionObj = {
             userId: loadedUser.userId || loadedUser.id || 'USR_EXISTS',
             email: cleanEmail,

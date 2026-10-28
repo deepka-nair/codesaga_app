@@ -29,6 +29,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Remove previous generated security evidence
+        run: |
+          rm -rf 'Vulnerability Test Results/evidence'
+          rm -f 'Vulnerability Test Results/Security_Review_Report.xlsx'
+
       - name: 2. Setup Node.js Environment (v20)
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0 (official release commit SHA targeting Node.js 24)
         with:
@@ -51,37 +56,45 @@ jobs:
       - name: 4. Install Application Dependencies
         run: |
           echo "Installing dependencies..."
-          npm ci || npm install --legacy-peer-deps || echo "::warning::Dependency installation completed with non-fatal warnings."
+          npm ci
 
       - name: 4b. Validate Expo CLI and Zod compatibility
         run: npx expo config --type public > /tmp/codesaga-expo-config.json
 
+      - name: 8. Collect validated dependency audit evidence
+        run: |
+          node scripts/collect-security-evidence.js
+          cp 'Vulnerability Test Results/evidence/root-npm-audit.json' npm-audit-results.json
+          cp 'Vulnerability Test Results/evidence/selenium-npm-audit.json' selenium-npm-audit-results.json
+          cp 'Vulnerability Test Results/evidence/appium-npm-audit.json' appium-npm-audit-results.json
+      - name: 8b. Run isolated security regression harness
+        run: |
+          set -o pipefail
+          node scripts/test-security-authorization.mjs | tee 'Vulnerability Test Results/evidence/security-regression.log'
+      - name: 9. Generate Security & Excel Reports
+        run: |
+          echo "Generating DevSecOps reports..."
+          node scripts/generate-security-excel-report.js
+          node scripts/verify-submission-reports.mjs
+
       - name: 5. Run Gitleaks Secret Detection Scan
         id: gitleaks
-        continue-on-error: true
         run: |
           echo "Running Gitleaks secret detection..."
           GITLEAKS_VERSION="8.18.2"
           curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz -C /tmp/
-          /tmp/gitleaks detect --source="." --verbose --report-format="json" --report-path="gitleaks-results.json" --exit-code=0 || {
-            echo "::warning::Gitleaks completed with warnings."
-            echo "[]" > gitleaks-results.json
-          }
+          /tmp/gitleaks detect --source="." --report-format="json" --report-path="gitleaks-results.json" --exit-code=0
+          node -e "const r=require('./gitleaks-results.json'); console.log('Gitleaks findings:',r.length); if(r.length) process.exit(1)"
 
       - name: 6. Run Semgrep SAST Analysis
         id: semgrep
-        continue-on-error: true
         run: |
           echo "Running Semgrep SAST scan..."
-          python3 -m pip install --upgrade pip semgrep --break-system-packages || python3 -m pip install semgrep || true
-          semgrep scan --config "p/security-audit" --config "p/owasp-top-ten" --json --output semgrep-results.json || {
-            echo "::warning::Semgrep exited with scanner notices."
-            echo '{"results": []}' > semgrep-results.json
-          }
+          python3 -m pip install semgrep --break-system-packages
+          semgrep scan --config "p/security-audit" --config "p/owasp-top-ten" --json --output semgrep-results.json
 
       - name: 7. Run Trivy Filesystem Vulnerability Scan
         id: trivy
-        continue-on-error: true
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 (verified official release commit SHA)
         with:
           scan-type: 'fs'
@@ -92,41 +105,16 @@ jobs:
           exit-code: '0'
           hide-progress: 'true'
 
-      - name: 7b. Validate Trivy Output
-        if: always()
+      - name: 10. Summarize actual scanner and audit evidence
         run: |
-          if [ ! -s "trivy-fs-report.txt" ]; then
-            echo "Trivy filesystem scan report generated." > trivy-fs-report.txt
-          fi
-
-      - name: 8. Run Node Dependency Security Audits
-        id: npm-audit
-        continue-on-error: true
-        run: |
-          echo "Auditing root application dependencies..."
-          npm audit --json > npm-audit-results.json 2>&1 || true
-          echo "Auditing Selenium test-tool dependencies..."
-          npm --prefix selenium-tests audit --json > selenium-npm-audit-results.json 2>&1 || true
-          echo "Auditing Appium test-tool dependencies..."
-          npm --prefix appium-tests audit --json > appium-npm-audit-results.json 2>&1 || true
-
-      - name: 9. Generate Security & Excel Reports
-        run: |
-          echo "Generating DevSecOps reports..."
-          node scripts/generate-security-excel-report.js || true
-
-      - name: 10. Generate Step Summary Table
-        if: always()
-        run: |
-          echo "## 🛡️ Security Review & DevSecOps Automation Summary" >> $GITHUB_STEP_SUMMARY
-          echo "| Tool | Purpose | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Gitleaks** | Repository Secret Detection | ✅ Clean (0 Secrets) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Semgrep** | OWASP Top 10 SAST Analysis | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Trivy** | Filesystem & Container Scan | ✅ Verified (v0.36.0) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **NPM Audit** | Software Composition Analysis | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
-          echo "| **DevSecOps Reports** | Excel & Markdown Reports | ✅ Generated |" >> $GITHUB_STEP_SUMMARY
-
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const model = JSON.parse(fs.readFileSync('Vulnerability Test Results/evidence/security-summary.json', 'utf8'));
+          const semgrep = JSON.parse(fs.readFileSync('semgrep-results.json', 'utf8'));
+          const secrets = JSON.parse(fs.readFileSync('gitleaks-results.json', 'utf8'));
+          if (!Array.isArray(semgrep.results) || !Array.isArray(secrets)) throw new Error('Invalid scanner evidence');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Security evidence\nCommit: ${model.commit}\n\nRegistered findings: ${model.groups.at(-1).discovered} (see CSV for remediation claims).\nGitleaks findings: ${secrets.length}. Semgrep findings: ${semgrep.results.length}; scanner errors: ${semgrep.errors?.length ?? 0}.\n\n${model.audits.map(a => `${a.scope}: ${a.critical} critical, ${a.high} high, ${a.moderate} moderate, ${a.low} low.`).join('\n')}\n\nPassing dependency gates does not certify complete mobile coverage or resolve residual Low findings.\n`);
+          NODE
       - name: 11. Enforce High-and-Critical Dependency Security Gate Across All Scopes
         run: |
           node --input-type=module <<'NODE'
@@ -134,7 +122,8 @@ jobs:
           const scopes = [
             ['root application', 'npm-audit-results.json'],
             ['Selenium test tooling', 'selenium-npm-audit-results.json'],
-            ['Appium test tooling', 'appium-npm-audit-results.json']
+            ['Appium test tooling', 'appium-npm-audit-results.json'],
+            ['Load test tooling', 'Vulnerability Test Results/evidence/load-npm-audit.json']
           ];
           let blockedCount = 0;
           for (const [scope, path] of scopes) {
@@ -157,7 +146,19 @@ jobs:
             console.error(`Security gate failed: ${blockedCount} high/critical package findings remain across audited scopes.`);
             process.exitCode = 1;
           } else if (!process.exitCode) {
-            console.log('High-and-critical dependency gate passed for all three scopes.');
+            console.log('High-and-critical dependency gate passed for all four scopes.');
+          }
+          NODE
+
+      - name: 11b. Enforce registered application security blockers
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const model = JSON.parse(fs.readFileSync('Vulnerability Test Results/evidence/security-summary.json', 'utf8'));
+          const application = model.groups.find(g => g.scope === 'Application code (SEC)');
+          if (application.pending) {
+            console.error(`Release blocked: ${application.pending} application-code register finding(s) remain pending. See findings.csv, including reopened SEC-01.`);
+            process.exitCode = 1;
           }
           NODE
 
@@ -169,9 +170,11 @@ jobs:
           path: |
             Vulnerability Test Results/
             Vulnerability Test Results/Security_Review_Report.xlsx
+            gitleaks-results.json
             semgrep-results.json
             npm-audit-results.json
             selenium-npm-audit-results.json
             appium-npm-audit-results.json
             trivy-fs-report.txt
           retention-days: 30
+          if-no-files-found: error

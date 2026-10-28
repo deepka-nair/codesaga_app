@@ -99,12 +99,16 @@ jobs:
             echo "Trivy filesystem scan report generated." > trivy-fs-report.txt
           fi
 
-      - name: 8. Run Node Dependency Security Audit
+      - name: 8. Run Node Dependency Security Audits
         id: npm-audit
         continue-on-error: true
         run: |
-          echo "Executing npm audit for software composition analysis..."
+          echo "Auditing root application dependencies..."
           npm audit --json > npm-audit-results.json 2>&1 || true
+          echo "Auditing Selenium test-tool dependencies..."
+          npm --prefix selenium-tests audit --json > selenium-npm-audit-results.json 2>&1 || true
+          echo "Auditing Appium test-tool dependencies..."
+          npm --prefix appium-tests audit --json > appium-npm-audit-results.json 2>&1 || true
 
       - name: 9. Generate Security & Excel Reports
         run: |
@@ -154,5 +158,7 @@ jobs:
             Vulnerability Test Results/Security_Review_Report.xlsx
             semgrep-results.json
             npm-audit-results.json
+            selenium-npm-audit-results.json
+            appium-npm-audit-results.json
             trivy-fs-report.txt
           retention-days: 30

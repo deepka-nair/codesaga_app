@@ -24,7 +24,7 @@ export async function startFixture({ mongo = false } = {}) {
   app.get('/api/health', (_, res) => res.json({ status: 'ok', mongodbConnected: mongoose.connection.readyState === 1 }));
   const server = app.listen(0, '127.0.0.1'); await new Promise(resolve => server.once('listening', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
-  const password = 'SubmissionFixture123';
+  const password = crypto.randomBytes(24).toString('base64url') + 'Aa1';
   const suffix = crypto.randomBytes(5).toString('hex');
   const ownerEmail = `owner-${suffix}@codesaga.test`, otherEmail = `other-${suffix}@codesaga.test`;
   const digest = await bcrypt.hash(password, 12);

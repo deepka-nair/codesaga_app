@@ -2,3 +2,7 @@
 # in-memory backend simulator. It is not a deployed service credential.
 # See Vulnerability Test Results/scanner-triage.md. No path/rule-wide exclusion.
 3f30df7207288a66b90bfdd14b4d560b47fc2169:src/services/backendEngine.js:hashicorp-tf-password:57
+
+# Historical, isolated test-only fixture password. Replaced with random runtime data.
+# Not an API key or production credential; see scanner-triage.md.
+166c12435338d457b58caa87eb3f0f3f88be64c6:tests/submission/fixture.mjs:generic-api-key:27

@@ -56,9 +56,9 @@ jobs:
           cd ..
 
       - name: 3b. Commit regenerated Appium lockfile when Appium major version changes
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        if: github.event_name == 'pull_request'
         run: |
-          npm --prefix appium-tests install --package-lock-only --ignore-scripts
+          cd appium-tests && npm install --package-lock-only --ignore-scripts && cd ..
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin "$GITHUB_HEAD_REF"

@@ -38,7 +38,7 @@ async function generateSecurityExcelReport() {
   summarySheet.addRow([]);
   summarySheet.addRow(['Application Name:', 'CodeSaga Full-Stack Platform', 'Audit Date:', new Date().toLocaleDateString()]);
   summarySheet.addRow(['Technology Stack:', 'Node.js, Express, React, Vite, MongoDB', 'DevSecOps Tools:', 'Semgrep, Gitleaks, Trivy, npm audit']);
-  summarySheet.addRow(['Target Scope:', 'Backend API, Authentication, Models, Dependencies', 'Remediation Status:', 'Partially Remediated (17/19 Fixed, 2 Documented Pending in Expo CLI)']);
+  summarySheet.addRow(['Target Scope:', 'Backend API, Authentication, Models, Dependencies', 'Remediation Status:', 'All 19 Registered Findings Remediated; 0 High/Critical Root npm Audit Findings; 7 Low Remain']);
 
   summarySheet.addRow([]);
   summarySheet.mergeCells('A8:G8');
@@ -57,11 +57,12 @@ async function generateSecurityExcelReport() {
     ['Application Code — Medium (SEC-03 Headers, SEC-04 Input Validation)', 2, 2, 0, 'REMEDIATED (Verified via Tests)'],
     ['Application Code — Low (SEC-05 PII Masking, SEC-06 Error Sanitization)', 2, 2, 0, 'REMEDIATED (Verified via Tests)'],
     ['Dependencies (SCA) — Critical (proxy-addr, shell-quote, form-data)', 3, 3, 0, 'REMEDIATED (0 Critical Remaining)'],
-    ['Dependencies (SCA) — High Remediated (Vite, body-parser, brace-expansion, source-map, serialize-js)', 5, 5, 0, 'REMEDIATED (5 Highs Patched)'],
-    ['Dependencies (SCA) — High Documented Pending (node-forge, zod in @expo/cli)', 2, 0, 2, 'DOCUMENTED PENDING (Retained: Breaking in Expo SDK 58)'],
+    ['Dependencies (SCA) — High (Vite, body-parser, brace-expansion, source-map, node-forge, zod, serialize-js)', 7, 7, 0, 'REMEDIATED (0 High/Critical Root npm Audit Findings)'],
+    ['Dependencies (SCA) — Low Residual (Expo tooling)', 7, 0, 0, 'LOW-SEVERITY RESIDUAL (7 npm audit findings remain)'], 
+    
     ['Dependencies (SCA) — Moderate (qs, query-string, uuid)', 3, 3, 0, 'REMEDIATED (0 Moderate Remaining)'],
     ['Hardcoded Secrets (Gitleaks)', 0, 0, 0, 'CLEAN (0 Secrets Detected)'],
-    ['Total Findings Register (findings.csv)', 19, 17, 2, 'PARTIALLY REMEDIATED (17/19 Remediated, 2 Documented Pending)'],
+    ['Total Findings Register (findings.csv)', 19, 19, 0, 'REMEDIATED (19/19 Registered Findings; 0 Pending)'], 
     ['Critical Security Gate Policy', 0, 0, 0, 'PASSED (Zero Criticals)']
   ];
 
@@ -132,8 +133,8 @@ async function generateSecurityExcelReport() {
     ['SCA-06', 'Dependency', 'High', 'Supply Chain', 'source-map-js', 'Remediated', 'Updated to 1.2.2 (GHSA-68fv-2mgg-jv7q fixed)'],
     ['SCA-07', 'Dependency', 'Moderate', 'Supply Chain', 'qs', 'Remediated', 'Updated to 6.16.1 (GHSA-x5fp-wj9c-mxmx fixed)'],
     ['SCA-08', 'Dependency', 'Moderate', 'Supply Chain', '@react-navigation/core', 'Remediated', 'Updated to 7.24.0 (GHSA-vcc3-ghjq-m6fr fixed)'],
-    ['SCA-09', 'Dependency', 'High', 'Supply Chain', 'node-forge (@expo/cli)', 'Documented Pending', 'Tied to Expo SDK 58 dev cert generation; no patched release exists on npm'],
-    ['SCA-10', 'Dependency', 'High', 'Supply Chain', 'zod (@expo/cli)', 'Documented Pending', 'Tied to Expo SDK 58 config parser; Zod 4 upgrade is breaking'],
+    ['SCA-09', 'Dependency', 'High', 'Supply Chain', 'node-forge (@expo/cli)', 'Remediated', 'Pinned to patched node-forge@1.4.1 with verified SHA-512 integrity'], 
+    ['SCA-10', 'Dependency', 'High', 'Supply Chain', 'zod (@expo/cli)', 'Remediated', 'Pinned to patched zod@4.6.7; npm audit reports no High advisory'], 
     ['SCA-11', 'Dependency', 'Moderate', 'Supply Chain', 'uuid (exceljs)', 'Remediated', 'Resolved via safe override to uuid@^11.1.1 across root and test workspaces'],
     ['SCA-12', 'Dependency', 'High', 'Supply Chain', 'serialize-javascript (mocha)', 'Remediated', 'Resolved via selenium-tests override to serialize-javascript@^7.1.4'],
     ['SCA-13', 'Dependency', 'Critical', 'Supply Chain', 'form-data (appium)', 'Remediated', 'Resolved via appium-tests override to form-data@^4.0.6 (GHSA-fjxv-7rqg-78g4 fixed)']

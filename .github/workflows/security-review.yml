@@ -53,6 +53,9 @@ jobs:
           echo "Installing dependencies..."
           npm ci || npm install --legacy-peer-deps || echo "::warning::Dependency installation completed with non-fatal warnings."
 
+      - name: 4b. Validate Expo CLI and Zod compatibility
+        run: npx expo config --type public > /tmp/codesaga-expo-config.json
+
       - name: 5. Run Gitleaks Secret Detection Scan
         id: gitleaks
         continue-on-error: true
@@ -120,13 +123,26 @@ jobs:
           echo "| **NPM Audit** | Software Composition Analysis | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
           echo "| **DevSecOps Reports** | Excel & Markdown Reports | ✅ Generated |" >> $GITHUB_STEP_SUMMARY
 
-      - name: 11. Enforce Critical-Only Security Gate
+      - name: 11. Enforce High-and-Critical Dependency Security Gate
         run: |
-          echo "======================================================="
-          echo "🚦 EVALUATING CRITICAL-ONLY SECURITY GATE"
-          echo "======================================================="
-          echo "Gate Policy: Zero Critical Application-Level Deficiencies."
-          echo "✅ Critical Security Gate Passed."
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const report = JSON.parse(fs.readFileSync('npm-audit-results.json', 'utf8'));
+          if (report.error || !report.metadata?.vulnerabilities || !report.vulnerabilities) {
+            console.error('Dependency audit did not produce a valid report; failing closed.');
+            process.exit(1);
+          }
+          const blocked = Object.entries(report.vulnerabilities)
+            .filter(([, item]) => item.severity === 'critical' || item.severity === 'high');
+          const totals = report.metadata.vulnerabilities;
+          console.log(`npm audit totals: ${totals.critical} critical, ${totals.high} high, ${totals.moderate} moderate, ${totals.low} low.`);
+          if (blocked.length) {
+            console.error('High/Critical dependency advisories block this workflow:');
+            for (const [name, item] of blocked) console.error(`- ${name}: ${item.severity}`);
+            process.exit(1);
+          }
+          console.log('High-and-critical dependency gate passed.');
+          NODE
 
       - name: 12. Upload Security Reports & Excel Artifacts
         if: always()

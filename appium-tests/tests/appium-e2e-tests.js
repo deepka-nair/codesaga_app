@@ -1,371 +1,82 @@
-/**
- * CodeSaga Mobile App E2E Appium Test Suite (310 Mobile Test Cases)
- * File: appium-tests/tests/appium-e2e-tests.js
- * Description: Complete 310-test E2E Appium Mobile Automation Suite for CodeSaga Mobile App (Expo Go / Android).
- * Framework: WebdriverIO / Appium JS Client + Mocha + Chai + ExcelJS Reporter
- */
-
+import { strict as assert } from 'node:assert';
 import { remote } from 'webdriverio';
-import { expect } from 'chai';
 import { APPIUM_SERVER_CONFIG, ANDROID_CAPABILITIES } from '../config/appium.config.js';
 import { generateAppiumReportFromResults } from '../scripts/generate-excel-report.js';
+import { enterWebView, displayed as visible } from './webview.js';
+import { scenarios } from './scenario-register.js';
 
 export const executionResults = [];
+const live = process.env.RUN_LIVE_APPIUM === 'true';
 
-const APPIUM_BLOCKER_MSG = "BLOCKED: Appium automation session not connected. Test requires Appium Server 2.x on port 4723 and an active Android Emulator or physical device with com.codesaga.app installed. Mobile hardware virtualization is unavailable in headless CI.";
-
-/**
- * Mobile Page Object Model (POM) for CodeSaga Mobile Frontend
- */
-export class MobileAppPage {
-  constructor(driver) {
-    this.driver = driver;
-  }
-
-  // Selectors using Mobile TestIDs / Accessibility Selectors
-  get appHeader() { return this.driver.$('~app-title-codesaga'); }
-  get emailInput() { return this.driver.$('~input-email'); }
-  get passwordInput() { return this.driver.$('~input-password'); }
-  get loginButton() { return this.driver.$('~btn-login'); }
-  get guestButton() { return this.driver.$('~btn-guest-play'); }
-  get otpInput() { return this.driver.$('~input-otp-code'); }
-  get statusBanner() { return this.driver.$('~status-alert-banner'); }
-  get dashboardNav() { return this.driver.$('~nav-dashboard'); }
-  get questCardPython() { return this.driver.$('~quest-card-python'); }
-  get questCardCpp() { return this.driver.$('~quest-card-cpp'); }
-  get questCardSql() { return this.driver.$('~quest-card-sql'); }
-  get profileTab() { return this.driver.$('~nav-profile-tab'); }
-
-  async launchApp() {
-    if (this.driver) {
-      await this.driver.activateApp('com.codesaga.app');
+describe('CodeSaga mobile register (310 scenarios; implementation status reported separately)', function () {
+  this.timeout(180000);
+  let driver;
+  let setupError;
+  const displayed = (id) => visible(driver, id);
+  const click = async (id) => (await displayed(id)).click();
+  const actions = {
+    1: async () => { await displayed('btn-guest-play'); await displayed('input-email'); },
+    2: async () => {
+      await driver.switchContext('NATIVE_APP');
+      await driver.background(2); await driver.activateApp('com.codesaga.app');
+      assert.equal(await driver.getCurrentPackage(), 'com.codesaga.app'); await enterWebView(driver); await displayed('input-email');
+    },
+    36: async () => { await click('btn-guest-play'); await displayed('dashboard-title'); },
+    37: async () => {
+      // Allow the asynchronous AsyncStorage write to finish; verify by relaunching the app.
+      assert.equal(await driver.execute(() => JSON.parse(localStorage.getItem('codesaga-storage')).state.isGuest), true);
+      await driver.switchContext('NATIVE_APP');
+      await driver.pause(1000);
+      await driver.terminateApp('com.codesaga.app'); await driver.activateApp('com.codesaga.app');
+      await enterWebView(driver); await displayed('dashboard-title');
+    },
+    38: async () => { await click('open-profile'); await displayed('profile-title'); },
+    39: async () => { await driver.back(); await displayed('dashboard-title'); },
+    40: async () => { await click('btn-logout'); await displayed('input-email'); },
+    41: async () => {
+      await (await displayed('input-email')).setValue('invalid-email');
+      assert.equal(await driver.execute(() => document.querySelector('[data-testid="input-email"]').validity.valid), false);
+      assert.match(await driver.getUrl(), /\/login/);
+    },
+    42: async () => {
+      const input = await displayed('input-email'); await input.setValue('qa@example.com');
+      assert.equal(await input.getValue(), 'qa@example.com');
+    },
+    76: async () => {
+      await click('btn-guest-play'); await displayed('dashboard-title');
+      await (await driver.$('[data-testid="quest-card-backend"]')).scrollIntoView();
+      await displayed('quest-card-backend');
     }
-  }
-
-  async login(email, password) {
-    if (this.driver) {
-      await (await this.emailInput).setValue(email);
-      await (await this.passwordInput).setValue(password);
-      await (await this.loginButton).click();
-    }
-  }
-
-  async loginAsGuest() {
-    if (this.driver) {
-      const btn = await this.guestButton;
-      await btn.waitForDisplayed({ timeout: 10000 });
-      await btn.click();
-    }
-  }
-
-  async swipeQuestCarousel(direction = 'left') {
-    if (this.driver) {
-      // Touch swipe action via WebdriverIO touch action
-      await this.driver.execute('mobile: swipeGesture', {
-        left: 100, top: 300, width: 600, height: 400,
-        direction,
-        percent: 0.75
-      }).catch(() => {});
-    }
-  }
-}
-
-describe('CodeSaga Mobile App - Appium E2E Automation Suite (310 Tests)', function () {
-  this.timeout(300000);
-  let driver = null;
-  let mobilePage = null;
-
+  };
   before(async function () {
-    if (process.env.RUN_LIVE_APPIUM === 'true') {
-      try {
-        driver = await remote({
-          ...APPIUM_SERVER_CONFIG,
-          capabilities: ANDROID_CAPABILITIES
-        });
-        mobilePage = new MobileAppPage(driver);
-      } catch (e) {
-        console.warn("Appium driver connection note: Appium server not reachable. Execution blocked due to missing mobile virtualization environment.");
-      }
-    } else {
-      console.warn("Appium driver connection note: RUN_LIVE_APPIUM not enabled. Execution blocked due to missing mobile virtualization environment.");
-    }
+    if (!live) return;
+    try {
+      driver = await remote({ ...APPIUM_SERVER_CONFIG, capabilities: ANDROID_CAPABILITIES });
+      await enterWebView(driver);
+    } catch (error) { setupError = error; throw error; }
   });
-
+  afterEach(function () {
+    const scenario = scenarios.find(s => this.currentTest.title.startsWith(s.id));
+    executionResults.push({ ...scenario,
+      status: !scenario.implemented ? 'Not Implemented' : !live ? 'Blocked' :
+        this.currentTest.state === 'passed' ? 'Pass' : this.currentTest.state === 'failed' ? 'Fail' : 'Skipped',
+      actual: this.currentTest.err?.message || (!scenario.implemented ? 'No automated assertion exists.' :
+        !live ? 'RUN_LIVE_APPIUM is disabled; no device execution attempted.' : 'Assertions completed on Android emulator.') });
+  });
   after(async function () {
-    if (driver) {
-      await driver.deleteSession().catch(() => {});
-    }
-    if (generateAppiumReportFromResults) {
-      try {
-        await generateAppiumReportFromResults(executionResults);
-      } catch (err) {
-        console.warn("Appium report generation warning:", err.message);
-      }
+    try { if (driver) await driver.deleteSession(); }
+    finally {
+      const results = scenarios.map(s => executionResults.find(r => r.id === s.id) || { ...s,
+        status: s.implemented ? 'Blocked' : 'Not Implemented',
+        actual: setupError ? `Appium setup failed: ${setupError.message}` : 'No execution result recorded.' });
+      await generateAppiumReportFromResults(results);
     }
   });
-
-  function recordTest(id, category, title, status, actual, priority = 'Medium', severity = 'Major', mode = 'Automated') {
-    const isSessionActive = Boolean(driver && mobilePage);
-    const finalStatus = isSessionActive ? status : "Blocked";
-    const finalActual = isSessionActive ? (actual || "Executed via Appium mobile automation.") : APPIUM_BLOCKER_MSG;
-    const finalNotes = isSessionActive
-      ? "Appium mobile E2E automated test execution result."
-      : "Execution blocked: Mobile virtualization environment and Appium 2.x server unavailable in CI.";
-
-    executionResults.push({
-      id,
-      category,
-      title,
-      preconditions: "1. Appium Server 2.x active.\n2. Expo Go / Android Emulator connected.\n3. CodeSaga Mobile App launched.",
-      steps: `1. Launch CodeSaga Mobile App\n2. Execute mobile test scenario ${id}\n3. Assert mobile component state`,
-      data: `MobileData_${id}`,
-      expected: `System handles mobile test scenario ${id} cleanly as expected.`,
-      actual: finalActual,
-      status: finalStatus,
-      priority,
-      severity,
-      mode,
-      scriptRef: `appium-e2e-tests.js#${id}`,
-      notes: finalNotes
+  for (const scenario of scenarios) {
+    it(`${scenario.id}: ${scenario.title}`, async function () {
+      if (!scenario.implemented || !live) { this.skip(); return; }
+      assert.ok(driver?.sessionId, 'A live Appium session is required');
+      await actions[scenario.number]();
     });
   }
-
-  // =========================================================================
-  // CATEGORY 1: Mobile Launch & App Lifecycle (35 Tests: TC_APP_001 to TC_APP_035)
-  // =========================================================================
-  describe('1. Mobile Launch & App Lifecycle', function () {
-    it('TC_APP_001: Should launch mobile app and verify splash title screen', async function () {
-      if (!driver || !mobilePage) {
-        recordTest('TC_APP_001', 'Mobile Launch & App Lifecycle', 'Should launch mobile app and verify splash title screen', 'Blocked', APPIUM_BLOCKER_MSG, 'High', 'Critical');
-        this.skip();
-        return;
-      }
-      const isDisplayed = await (await mobilePage.appHeader).isDisplayed();
-      expect(isDisplayed).to.be.true;
-      recordTest('TC_APP_001', 'Mobile Launch & App Lifecycle', 'Should launch mobile app and verify splash title screen', 'Pass', 'Mobile splash screen rendered cleanly.', 'High', 'Critical');
-    });
-
-    it('TC_APP_002: Should handle app backgrounding and session restoration', async function () {
-      if (!driver) {
-        recordTest('TC_APP_002', 'Mobile Launch & App Lifecycle', 'Should handle app backgrounding and session restoration', 'Blocked', APPIUM_BLOCKER_MSG, 'High', 'Major');
-        this.skip();
-        return;
-      }
-      await driver.background(2);
-      recordTest('TC_APP_002', 'Mobile Launch & App Lifecycle', 'Should handle app backgrounding and session restoration', 'Pass', 'App resumed successfully after 2s backgrounding.', 'High', 'Major');
-    });
-
-    for (let i = 3; i <= 35; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Mobile Launch & App Lifecycle test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Mobile Launch & App Lifecycle', `Mobile Launch & App Lifecycle test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Mobile Launch & App Lifecycle', `Mobile Launch & App Lifecycle test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
-
-  // =========================================================================
-  // CATEGORY 2: Mobile Auth & Guest Access (40 Tests: TC_APP_036 to TC_APP_075)
-  // =========================================================================
-  describe('2. Mobile Auth & Guest Access', function () {
-    it('TC_APP_036: Should execute Mobile Guest Login and navigate to Worlds screen', async function () {
-      if (!driver || !mobilePage) {
-        recordTest('TC_APP_036', 'Mobile Auth & Guest Access', 'Should execute Mobile Guest Login and navigate to Worlds screen', 'Blocked', APPIUM_BLOCKER_MSG, 'High', 'Critical');
-        this.skip();
-        return;
-      }
-      await mobilePage.loginAsGuest();
-      recordTest('TC_APP_036', 'Mobile Auth & Guest Access', 'Should execute Mobile Guest Login and navigate to Worlds screen', 'Pass', 'Guest user authenticated and redirected to /worlds dashboard.', 'High', 'Critical');
-    });
-
-    for (let i = 37; i <= 75; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Mobile Auth & Guest Access test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Mobile Auth & Guest Access', `Mobile Auth & Guest Access test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Mobile Auth & Guest Access', `Mobile Auth & Guest Access test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
-
-  // =========================================================================
-  // CATEGORY 3: Touch Gestures, Swipe & Pinch/Zoom (35 Tests: TC_APP_076 to TC_APP_110)
-  // =========================================================================
-  describe('3. Touch Gestures, Swipe & Pinch/Zoom', function () {
-    it('TC_APP_076: Should perform horizontal swipe gesture across Quest cards carousel', async function () {
-      if (!driver || !mobilePage) {
-        recordTest('TC_APP_076', 'Touch Gestures, Swipe & Pinch/Zoom', 'Should perform horizontal swipe gesture across Quest cards carousel', 'Blocked', APPIUM_BLOCKER_MSG, 'High', 'Critical');
-        this.skip();
-        return;
-      }
-      await mobilePage.swipeQuestCarousel('left');
-      recordTest('TC_APP_076', 'Touch Gestures, Swipe & Pinch/Zoom', 'Should perform horizontal swipe gesture across Quest cards carousel', 'Pass', 'Horizontal swipe gesture executed smoothly.', 'High', 'Critical');
-    });
-
-    for (let i = 77; i <= 110; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Touch Gestures & Swipe test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Touch Gestures, Swipe & Pinch/Zoom', `Touch Gestures & Swipe test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Touch Gestures, Swipe & Pinch/Zoom', `Touch Gestures & Swipe test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
-
-  // =========================================================================
-  // CATEGORY 4: Mobile Code Editor & Keyboard Inputs (30 Tests: TC_APP_111 to TC_APP_140)
-  // =========================================================================
-  describe('4. Mobile Code Editor & Keyboard Inputs', function () {
-    for (let i = 111; i <= 140; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Mobile Code Editor & Keyboard test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Mobile Code Editor & Keyboard Inputs', `Mobile Code Editor test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Mobile Code Editor & Keyboard Inputs', `Mobile Code Editor test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
-
-  // =========================================================================
-  // CATEGORY 5: Device Features - Camera, Biometrics, Push (25 Tests: TC_APP_141 to TC_APP_165)
-  // =========================================================================
-  describe('5. Device Features (Camera, Biometrics, Push)', function () {
-    for (let i = 141; i <= 165; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Device Features test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Device Features (Camera, Biometrics, Push)', `Device feature test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Device Features (Camera, Biometrics, Push)', `Device feature test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
-
-  // =========================================================================
-  // CATEGORY 6: Screen Orientation (20 Tests: TC_APP_166 to TC_APP_185)
-  // =========================================================================
-  describe('6. Screen Orientation (Portrait/Landscape)', function () {
-    for (let i = 166; i <= 185; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Screen Orientation test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Screen Orientation (Portrait/Landscape)', `Screen orientation test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Screen Orientation (Portrait/Landscape)', `Screen orientation test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
-
-  // =========================================================================
-  // CATEGORY 7: Offline Mode & Mobile Network Resilience (35 Tests: TC_APP_186 to TC_APP_220)
-  // =========================================================================
-  describe('7. Offline Mode & Mobile Network Resilience', function () {
-    for (let i = 186; i <= 220; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Offline Mode & Network Resilience test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Offline Mode & Mobile Network Resilience', `Offline resilience test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Offline Mode & Mobile Network Resilience', `Offline resilience test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
-
-  // =========================================================================
-  // CATEGORY 8: Hybrid WebView & Context Switching (25 Tests: TC_APP_221 to TC_APP_245)
-  // =========================================================================
-  describe('8. Hybrid WebView & Context Switching', function () {
-    for (let i = 221; i <= 245; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Hybrid WebView & Context Switching test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Hybrid WebView & Context Switching', `Context switching test scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Hybrid WebView & Context Switching', `Context switching test scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
-
-  // =========================================================================
-  // CATEGORY 9: Mobile UI, Accessibility IDs & Dark Theme (30 Tests: TC_APP_246 to TC_APP_275)
-  // =========================================================================
-  describe('9. Mobile UI, Accessibility IDs & Dark Theme', function () {
-    for (let i = 246; i <= 275; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Mobile UI & Accessibility test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Mobile UI, Accessibility IDs & Dark Theme', `Mobile UI sub-scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Mobile UI, Accessibility IDs & Dark Theme', `Mobile UI sub-scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
-
-  // =========================================================================
-  // CATEGORY 10: Android UiAutomator2 vs iOS XCUITest Compatibility (20 Tests: TC_APP_276 to TC_APP_295)
-  // =========================================================================
-  describe('10. Android UiAutomator2 vs iOS XCUITest Compatibility', function () {
-    for (let i = 276; i <= 295; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Driver Compatibility test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Android UiAutomator2 vs iOS XCUITest Compatibility', `Driver compatibility sub-scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Android UiAutomator2 vs iOS XCUITest Compatibility', `Driver compatibility sub-scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
-
-  // =========================================================================
-  // CATEGORY 11: Mobile Security, SSL Pinning & Storage (15 Tests: TC_APP_296 to TC_APP_310)
-  // =========================================================================
-  describe('11. Mobile Security, SSL Pinning & Storage', function () {
-    for (let i = 296; i <= 310; i++) {
-      const tcId = `TC_APP_${String(i).padStart(3, '0')}`;
-      it(`${tcId}: Mobile Security & Storage test scenario #${i}`, async function () {
-        if (!driver || !mobilePage) {
-          recordTest(tcId, 'Mobile Security, SSL Pinning & Storage', `Security & storage sub-scenario #${i}`, 'Blocked', APPIUM_BLOCKER_MSG);
-          this.skip();
-          return;
-        }
-        recordTest(tcId, 'Mobile Security, SSL Pinning & Storage', `Security & storage sub-scenario #${i}`, 'Untested', `Placeholder scenario: No automated mobile assertion implemented for sub-scenario #${i}.`);
-        this.skip();
-      });
-    }
-  });
 });

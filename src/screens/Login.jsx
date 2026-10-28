@@ -425,6 +425,7 @@ const Login = () => {
               <div>
                 <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Email Address</label>
                 <input 
+                  data-testid="input-email"
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -459,6 +460,7 @@ const Login = () => {
                   </button>
                 </div>
                 <input 
+                  data-testid="input-password"
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -512,6 +514,7 @@ const Login = () => {
               <div>
                 <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Email Address</label>
                 <input 
+                  data-testid="input-email"
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -682,6 +685,7 @@ const Login = () => {
               <div>
                 <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Password</label>
                 <input 
+                  data-testid="input-password"
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -701,6 +705,7 @@ const Login = () => {
               <div>
                 <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Confirm Password</label>
                 <input 
+                  data-testid="input-password"
                   type="password" 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -728,7 +733,7 @@ const Login = () => {
             <div style={{ flex: 1, height: '2px', backgroundColor: 'var(--panel-border)' }} />
           </div>
 
-          <GameButton onClick={handleGuestPlay} variant="secondary">
+          <GameButton data-testid="btn-guest-play" onClick={handleGuestPlay} variant="secondary">
             CONTINUE AS GUEST 🎭
           </GameButton>
         </PixelPanel>

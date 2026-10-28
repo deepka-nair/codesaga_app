@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - name: Set up Java for Android build
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165
@@ -34,6 +34,13 @@ jobs:
           npm --prefix appium-tests install
       - name: Generate native Android project
         run: npx expo prebuild --platform android --no-install
+      - name: Work around React Native Gradle Foojay resolver plugin lookup in ephemeral CI
+        run: |
+          GRADLE_SETTINGS="node_modules/@react-native/gradle-plugin/settings.gradle.kts"
+          if grep -q "foojay-resolver-convention" "$GRADLE_SETTINGS"; then
+            sed -i '/foojay-resolver-convention/d' "$GRADLE_SETTINGS"
+          fi
+          cat "$GRADLE_SETTINGS"
       - name: Build CodeSaga debug APK
         run: |
           cd android

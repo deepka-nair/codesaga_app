@@ -48,6 +48,13 @@ jobs:
           echo "Installing API Load test dependencies..."
           cd load-tests && (npm ci || npm install) && cd ..
 
+      - name: 3a. Apply compatible Appium dependency security fixes
+        run: |
+          cd appium-tests
+          npm audit fix
+          npm audit --audit-level=high
+          cd ..
+
       - name: 3b. Commit regenerated Appium lockfile when Appium major version changes
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |

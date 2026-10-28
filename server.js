@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import userRoutes from './routes/users.js';
+import securityHeaders from './middleware/securityHeaders.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,18 +49,7 @@ app.use(cors(corsOptions));
 app.options(/(.*)/, cors(corsOptions));
 
 // HTTP Defensive Security Headers (Defends against clickjacking, MIME-sniffing, and insecure framing)
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader('X-XSS-Protection', '0');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://api.qrserver.com https://avatars.githubusercontent.com; connect-src 'self' http://localhost:* ws://localhost:* https://*.onrender.com https://api.github.com https://api.emailjs.com https://api.resend.com; frame-ancestors 'self' https://appassets.androidplatform.net;"
-  );
-  next();
-});
+app.use(securityHeaders);
 
 app.use(express.json());
 

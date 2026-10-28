@@ -32,6 +32,7 @@ const GameHUD = () => {
     <div className="hud-container" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
       {/* Player Character Avatar */}
       <div 
+        data-testid="open-profile"
         onClick={handleOpenProfile}
         data-cursor="interaction"
         title="Open Character Sheet Profile"

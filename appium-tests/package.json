@@ -10,15 +10,28 @@
   },
   "dependencies": {
     "exceljs": "^4.4.0",
-    "webdriverio": "^9.10.0"
+    "webdriverio": "^10.1.0"
   },
   "devDependencies": {
-    "appium": "^2.16.0",
+    "appium": "^3.9.0",
     "chai": "^5.2.0",
     "mocha": "^11.1.0"
   },
   "overrides": {
     "form-data": "^4.0.6",
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "basic-ftp": "^6.2.1",
+    "serialize-javascript": "^7.1.4",
+    "diff": "^8.0.3",
+    "shell-quote": "^1.8.5",
+    "axios": "^1.20.0",
+    "body-parser": "^2.4.0",
+    "express": "^5.2.1",
+    "lodash": "^4.17.24",
+    "path-to-regexp": "^8.4.2",
+    "ws": "^8.22.0",
+    "yaml": "^2.9.1",
+    "qs": "^6.16.1",
+    "sharp": "^0.35.6"
   }
 }

@@ -461,7 +461,7 @@ export default function ProfileScreen({ userState, initialTab = 'overview', onBa
                           {publishing ? (
                             <ActivityIndicator color="#ffffff" />
                           ) : (
-                            <Text style={styles.confirmPublishBtnText}>CONFIRM & PUBLISH PROJECT →</Text>
+                            <Text style={styles.confirmPublishBtnText}>CONFIRM &amp; PUBLISH PROJECT →</Text>
                           )}
                         </TouchableOpacity>
 

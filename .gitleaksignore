@@ -1,0 +1,4 @@
+# Exact historical false positive: mockReq.body password in the educational,
+# in-memory backend simulator. It is not a deployed service credential.
+# See Vulnerability Test Results/scanner-triage.md. No path/rule-wide exclusion.
+3f30df7207288a66b90bfdd14b4d560b47fc2169:src/services/backendEngine.js:hashicorp-tf-password:57

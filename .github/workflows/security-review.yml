@@ -87,6 +87,7 @@ jobs:
           node -e "const r=require('./gitleaks-results.json'); console.log('Gitleaks findings:',r.length); if(r.length) process.exit(1)"
 
       - name: 6. Run Semgrep SAST Analysis
+        if: ${{ !cancelled() }}
         id: semgrep
         run: |
           echo "Running Semgrep SAST scan..."
@@ -94,6 +95,7 @@ jobs:
           semgrep scan --config "p/security-audit" --config "p/owasp-top-ten" --json --output semgrep-results.json
 
       - name: 7. Run Trivy Filesystem Vulnerability Scan
+        if: ${{ !cancelled() }}
         id: trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 (verified official release commit SHA)
         with:

@@ -2,7 +2,7 @@ name: Security Review & DevSecOps Automation
 
 "on":
   push:
-    branches: [ main, master ]
+    branches: [ main, master, 'security/**' ]
   pull_request:
     branches: [ main, master ]
   schedule:

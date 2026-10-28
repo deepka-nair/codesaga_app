@@ -58,7 +58,6 @@ jobs:
       - name: 3b. Commit regenerated Appium lockfile when Appium major version changes
         if: github.event_name == 'pull_request'
         run: |
-          cd appium-tests && npm install --package-lock-only --ignore-scripts --force && node -e "const p=require('./package-lock.json'); const v=p.packages['node_modules/appium']?.version; console.log('Regenerated Appium lock version:', v); if (!v || !v.startsWith('3.')) process.exit(1)" && cd ..
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin "$GITHUB_HEAD_REF"
@@ -67,6 +66,10 @@ jobs:
             echo "::warning::Another CI run changed the branch concurrently; this run will not overwrite its lockfile."
             exit 0
           fi
+          cd appium-tests
+          npm install --package-lock-only --ignore-scripts --force
+          node -e "const p=require('./package-lock.json'); const v=p.packages['node_modules/appium']?.version; console.log('Regenerated Appium lock version:', v); if (!v || !v.startsWith('3.')) process.exit(1)"
+          cd ..
           git add appium-tests/package-lock.json
           if ! git diff --cached --quiet; then
             git commit -m "chore(appium): regenerate lockfile for Appium 3"
@@ -74,7 +77,6 @@ jobs:
           else
             echo "Appium lockfile already matches package.json."
           fi
-
       - name: 4. Start Express Backend & Vite Frontend Services
         env:
           PORT: 5000

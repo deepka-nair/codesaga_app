@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { enterWebView, displayed } from './webview.js';
+import { enterWebView, displayed, waitForAppForeground } from './webview.js';
 import { strict as assert } from 'node:assert';
 import { remote } from 'webdriverio';
 import { APPIUM_SERVER_CONFIG, ANDROID_CAPABILITIES } from '../config/appium.config.js';
@@ -51,7 +51,10 @@ describe('CodeSaga Android emulator smoke tests', function () {
   it('survives background and foreground lifecycle transitions', async function () {
     await driver.background(2);
     await driver.activateApp('com.codesaga.app');
+    await waitForAppForeground(driver);
     const currentPackage = await driver.getCurrentPackage();
     assert.equal(currentPackage, 'com.codesaga.app');
+    await enterWebView(driver);
+    await displayed(driver, 'input-email');
   });
 });

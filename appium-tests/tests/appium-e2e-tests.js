@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { remote } from 'webdriverio';
 import { APPIUM_SERVER_CONFIG, ANDROID_CAPABILITIES } from '../config/appium.config.js';
 import { generateAppiumReportFromResults } from '../scripts/generate-excel-report.js';
-import { enterWebView, displayed as visible } from './webview.js';
+import { enterWebView, waitForAppForeground, displayed as visible } from './webview.js';
 import { scenarios } from './scenario-register.js';
 
 export const executionResults = [];
@@ -19,6 +19,7 @@ describe('CodeSaga mobile register (310 scenarios; implementation status reporte
     2: async () => {
       await driver.switchContext('NATIVE_APP');
       await driver.background(2); await driver.activateApp('com.codesaga.app');
+      await waitForAppForeground(driver);
       assert.equal(await driver.getCurrentPackage(), 'com.codesaga.app'); await enterWebView(driver); await displayed('input-email');
     },
     36: async () => { await click('btn-guest-play'); await displayed('dashboard-title'); },

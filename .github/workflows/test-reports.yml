@@ -259,10 +259,10 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Test Suite | Status | Passed | Failed | Blocked | Scope / Target |" >> $GITHUB_STEP_SUMMARY
             echo "| :--- | :---: | :---: | :---: | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
-            echo "| **Suite 1: Selenium Web E2E** | ✅ **PASSED** | 310 | 0 | 0 | Chrome Headless vs Live Web App |" >> $GITHUB_STEP_SUMMARY
-            echo "| **Suite 2: Appium Mobile E2E** | ⚠️ **BLOCKED** | 0 | 0 | 310 | Missing Android Virtualization / Appium Server |" >> $GITHUB_STEP_SUMMARY
-            echo "| **Suite 3: API Baseline & Load** | ✅ **PASSED** | 100% | 0 | 0 | 100 VUs / 60s (>= 99.0% Success Standard) |" >> $GITHUB_STEP_SUMMARY
-            echo "| **Suite 4: DevSecOps SAST & Security** | ✅ **PASSED** | 17 Remediated | 0 Critical | 2 Documented Pending | SAST & Dependency Audit (findings.csv) |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Suite 1: Selenium Web E2E** | See Selenium job result | See generated Excel/console output | See generated Excel/console output | 0 | Chrome Headless vs Live Web App |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Suite 2: Appium Mobile E2E** | ⚠️ **INCOMPLETE** | See Appium report | See Appium report | See Appium report | 310 registered scenarios; many are placeholders and require live Appium assertions |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Suite 3: API Baseline & Load** | See load-test output | See generated Excel/console output | See generated Excel/console output | 0 | 100 VUs / 60s; use measured results below |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Suite 4: DevSecOps SAST & Security** | See audit output | See findings.csv and audit report | See findings.csv and audit report | See findings.csv and audit report | Counts must match generated audit evidence; no hardcoded remediation totals |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### 📦 Uploaded CI Artifacts (Run #${{ github.run_number }})" >> $GITHUB_STEP_SUMMARY
             echo "| Artifact Name | Direct Download Link | Artifact ID | Retention |" >> $GITHUB_STEP_SUMMARY

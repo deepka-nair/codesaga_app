@@ -60,6 +60,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$GITHUB_HEAD_REF"
+          if ! git rebase "origin/$GITHUB_HEAD_REF"; then
+            git rebase --abort || true
+            echo "::warning::Another CI run changed the branch concurrently; this run will not overwrite its lockfile."
+            exit 0
+          fi
           git add appium-tests/package-lock.json
           if ! git diff --cached --quiet; then
             git commit -m "chore(appium): regenerate lockfile for Appium 3"

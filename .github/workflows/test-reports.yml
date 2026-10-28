@@ -10,20 +10,22 @@ on:
 jobs:
   execute-tests-and-upload-artifacts:
     name: 🚀 Execute All 4 Test Suites & Upload Excel Reports Bundle
-    runs-on: ubuntu-latest
+    # Runner: Explicitly pinned to ubuntu-24.04 LTS to ensure predictable execution environments
+    # and address the ubuntu-latest -> Ubuntu 26.04 migration notice (actions/runner-images#14748).
+    runs-on: ubuntu-24.04
 
     steps:
       - name: 1. Checkout Repository Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (official release commit SHA targeting Node.js 24)
 
       - name: 2. Set up Node.js Environment (v20)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0 (official release commit SHA targeting Node.js 24)
         with:
           node-version: 20
           cache: 'npm'
 
       - name: 2b. Setup Chrome for Headless Selenium WebDriver
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2.2.0 (official release commit SHA targeting Node.js 24)
         with:
           chrome-version: stable
 
@@ -131,7 +133,7 @@ jobs:
 
       - name: 10. Upload Combined Artifact (all-4-test-excel-reports-bundle)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2 (official release commit SHA targeting Node.js 24)
         with:
           name: all-4-test-excel-reports-bundle
           path: test-reports/*.xlsx
@@ -140,7 +142,7 @@ jobs:
 
       - name: 11. Upload Individual Artifact - Selenium Web Excel Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2 (official release commit SHA targeting Node.js 24)
         with:
           name: selenium-web-e2e-report-excel
           path: selenium-tests/Login_Test_Cases_Report.xlsx
@@ -149,7 +151,7 @@ jobs:
 
       - name: 11b. Upload Selenium Failure Screenshots (if any)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2 (official release commit SHA targeting Node.js 24)
         with:
           name: selenium-failure-screenshots
           path: selenium-tests/screenshots/*.png
@@ -158,7 +160,7 @@ jobs:
 
       - name: 11c. Upload Service Startup Logs (backend.log & frontend.log)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2 (official release commit SHA targeting Node.js 24)
         with:
           name: service-startup-logs
           path: |
@@ -169,7 +171,7 @@ jobs:
 
       - name: 12. Upload Individual Artifact - Appium Mobile Excel Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2 (official release commit SHA targeting Node.js 24)
         with:
           name: appium-mobile-e2e-report-excel
           path: appium-tests/Appium_Test_Cases_Report.xlsx
@@ -178,7 +180,7 @@ jobs:
 
       - name: 13. Upload Individual Artifact - API Load Test Excel Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2 (official release commit SHA targeting Node.js 24)
         with:
           name: api-load-test-report-excel
           path: load-tests/Baseline_Load_Test_Report.xlsx
@@ -187,7 +189,7 @@ jobs:
 
       - name: 14. Upload Individual Artifact - Security Review Excel Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2 (official release commit SHA targeting Node.js 24)
         with:
           name: security-review-report-excel
           path: Vulnerability Test Results/Security_Review_Report.xlsx

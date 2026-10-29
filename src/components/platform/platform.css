@@ -1,0 +1,146 @@
+.saga-game{position:relative;height:100dvh;min-height:540px;width:100%;overflow:hidden;color:#23455c;background:radial-gradient(ellipse at 75% 15%,#e8fcff66,transparent 40%),linear-gradient(#48b9ed,#b4eff8 65%,#e0f9f2);font:500 16px/1.5 'Trebuchet MS',system-ui,sans-serif;isolation:isolate}
+.saga-game{--ink:#173c58;--glass:rgba(18,76,103,.88);--line:rgba(180,247,244,.86);--gold:#f6c85f}
+.saga-game *{box-sizing:border-box}
+.saga-game button{font:inherit;cursor:pointer;touch-action:manipulation}
+.saga-game button:focus-visible{outline:3px solid #edab30;outline-offset:4px}
+.saga-game button:disabled{cursor:not-allowed;opacity:.5}
+.saga-hud{position:absolute;left:clamp(14px,3vw,42px);right:clamp(14px,3vw,42px);top:18px;display:grid;grid-template-columns:minmax(220px,1fr) auto minmax(110px,1fr);gap:18px;align-items:center;z-index:5}
+.saga-profile,.saga-stats span,.saga-tools button{border:2px solid #b6f8fa;background:linear-gradient(130deg,#1d6485ee,#204f6fea);color:white;box-shadow:0 5px 0 #1856741a,0 8px 20px #165f7830;border-radius:18px}
+.saga-profile{display:flex;align-items:center;gap:12px;padding:6px 18px 6px 8px;text-align:left;min-width:230px;width:max-content;max-width:100%}
+.saga-profile svg{width:62px;height:62px;background:#d9f3fa;border:2px solid #8bf2e7;border-radius:50%;overflow:hidden}
+.saga-profile b{font-size:22px}
+.saga-profile small{display:block;font-size:12px;color:#c6f3f8}
+.saga-profile progress{display:block;width:140px;height:7px;margin-top:4px;accent-color:#69ebbf}
+.saga-stats{display:flex;gap:10px;justify-content:center}
+.saga-stats span{display:flex;gap:8px;align-items:center;padding:9px 15px;font-weight:800;font-size:20px;white-space:nowrap}
+.saga-stats svg{color:#ffd162;fill:#ffcc5e;width:23px}
+.saga-stats span:nth-child(2) svg{color:#ffb3af;fill:#fa7276}
+.saga-stats span:nth-child(3) svg{fill:#ff9c45}
+.saga-stats small{font-size:12px}
+.saga-tools{display:flex;gap:10px;justify-content:flex-end}
+.saga-tools button{padding:12px;display:flex}
+.saga-location{position:absolute;top:122px;left:clamp(18px,3vw,42px);z-index:2;max-width:min(420px,45vw)}
+.saga-location span,.saga-eyebrow{font-size:11px;letter-spacing:3px;font-weight:800;color:#276887}
+.saga-location h1{font:900 clamp(28px,4vw,52px)/1.08 'Trebuchet MS',sans-serif;margin:5px 0;color:white;letter-spacing:-1px;text-shadow:0 3px 0 #2789ad44}
+.saga-location p{margin:4px 0;font-size:13px;color:#27637b}
+.saga-cloud{position:absolute;width:200px;height:46px;border-radius:80px;background:#ffffffbe;filter:blur(1px);box-shadow:30px 12px 0 12px #ffffff65}
+.saga-cloud:before,.saga-cloud:after{content:'';position:absolute;background:inherit;border-radius:50%;width:85px;height:85px;left:30px;bottom:0}
+.saga-cloud:after{left:100px;width:65px;height:65px}
+.cloud-one{left:45%;top:18%}
+.cloud-two{left:78%;top:38%;transform:scale(1.3)}
+.cloud-three{left:3%;top:43%;transform:scale(.6)}
+.saga-distant{position:absolute;top:34%;width:100%;height:230px;opacity:.5}
+.saga-island{position:absolute;width:270px;height:95px;background:linear-gradient(140deg,#69bcc1,#a5d6d0 60%,#5fa1b6);border-top:16px solid #65bfa0;border-radius:50% 50% 48% 55%}
+.saga-island:after{content:'';position:absolute;top:65px;left:60px;width:150px;height:110px;background:linear-gradient(130deg,#83b7bd,#b5d9d3);clip-path:polygon(0 0,100% 0,65% 100%,30% 60%)}
+.saga-city{position:absolute;bottom:85px;display:flex;align-items:flex-end;gap:8px;padding-left:30px}
+.saga-city i{display:block;width:25px;background:repeating-linear-gradient(0deg,transparent 0 12px,#b1f1ed 12px 15px),linear-gradient(90deg,#53a2c4,#c7f2eb);border-radius:12px 12px 0 0}
+.saga-viewport{position:absolute;bottom:100px;width:100%;height:600px;overflow:hidden;pointer-events:none}
+.saga-stage{position:absolute;width:1500px;height:600px;bottom:0;will-change:transform}
+.saga-platform{position:absolute;border-top:15px solid #7dcf64;border-radius:10px 10px 14px 14px;background:repeating-linear-gradient(110deg,transparent 0 43px,#93775045 44px 47px),linear-gradient(#c4a576,#957b5d);box-shadow:0 6px 0 #5b854c55,inset 0 5px #a5e17c}
+.saga-platform:before{content:'';position:absolute;left:0;right:0;top:-19px;height:12px;background:radial-gradient(ellipse at bottom,#a7e178 60%,transparent 62%) 0 0/22px 12px}
+.saga-ground{height:200px!important;border-top-width:23px;background:radial-gradient(ellipse,#cbaf7f 30%,transparent 31%) 0 0/80px 48px,linear-gradient(#ac9471,#7b775f)}
+.saga-player{position:absolute;width:51px;height:76px;transform-origin:center;filter:drop-shadow(0 4px 2px #1e5c5544)}
+.saga-player svg{width:100%;height:100%}
+.saga-token{position:absolute;color:#fff0ae;background:linear-gradient(110deg,#ffe488,#f3a91e);border:3px solid #ffed99;border-radius:50%;width:29px;height:36px;display:grid;place-items:center;font-size:19px;box-shadow:0 3px 0 #c58d26;animation:saga-float 1.7s ease-in-out infinite}
+.saga-terminal{position:absolute;pointer-events:auto;display:flex;align-items:center;gap:8px;background:#285c73;color:#fff1bc;border:3px solid #e3c388;border-radius:8px;box-shadow:0 5px #765a3f;padding:8px;font-size:11px!important;line-height:1.2!important}
+.saga-flag{position:absolute;left:1375px;top:334px;height:176px;border-left:7px solid #e0b54b;color:#549b8d}
+.saga-flag svg{fill:#71c69a;margin-left:-3px}
+.saga-flag.unlocked svg{fill:#f6d06d;color:#b0842c}
+.saga-flag span{position:absolute;font-size:9px;bottom:0;left:-40px;width:110px;text-align:center;font-weight:bold}
+.saga-flower{position:absolute;top:478px;font-size:30px;color:#ffde83}
+.saga-quest{position:absolute;left:clamp(18px,3vw,42px);bottom:198px;max-width:250px;padding:14px 17px;text-align:left;background:#fffcefef;color:#315770;border:2px solid white;border-radius:14px;box-shadow:0 8px 30px #256b7b25}
+.saga-quest span{display:block;font-size:9px;font-weight:900;letter-spacing:1px;color:#91804d}
+.saga-quest strong{display:block;font-size:15px;margin:5px 0}
+.saga-quest small{color:#1d918f}
+.saga-bottom{position:absolute;bottom:0;height:76px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:18px;background:#ecfcf8e8;border-top:1px solid white;z-index:4;font-size:12px;color:#397084;padding:0 18px}
+.saga-bottom button{display:flex;gap:6px;align-items:center;background:white;border:1px solid #bfdfdf;color:#32627b;border-radius:9px;padding:8px 12px}
+.saga-bottom kbd{padding:3px 6px;background:white;border:1px solid #bfdfdf;border-radius:4px;margin-left:12px}
+.saga-touch{position:absolute;bottom:100px;left:25px;right:25px;display:flex;justify-content:space-between;pointer-events:none}
+.saga-touch div{display:flex;gap:9px}
+.saga-touch button{pointer-events:auto;touch-action:none;user-select:none;display:grid;place-items:center;width:55px;height:55px;border-radius:50%;background:#215d79cc;border:3px solid #a4eee7;color:white;box-shadow:0 5px #23526844}
+.saga-dialogue{position:absolute;z-index:8;left:50%;top:24%;transform:translateX(-50%);width:min(880px,90%);display:grid;grid-template-columns:155px 1fr;gap:18px;background:#fffffff5;border:3px solid #a2f2ef;border-radius:24px;box-shadow:0 6px 0 #2883a04d,0 20px 70px #14567435;padding:18px 24px 12px 12px}
+.saga-guide{background:linear-gradient(#244660,#2d7892);border-radius:16px;height:180px;overflow:hidden;display:flex;align-items:flex-start}
+.saga-guide svg{width:170px;min-width:170px;height:255px;margin-left:-8px}
+.saga-speaker{position:absolute;top:-17px;background:#285d7f;color:white;padding:5px 20px;font-size:12px;letter-spacing:1px;border-radius:8px;border:2px solid #bcf8f3;font-weight:900}
+.saga-dialogue p{font-size:clamp(15px,1.7vw,21px);line-height:1.65;margin:17px 0 10px;color:#355776}
+.saga-dialogue-actions{display:flex;justify-content:space-between;gap:10px}
+.saga-dialogue-actions button{border:0;background:none;color:#2a8996;font-size:12px;padding:8px}
+.saga-indicator{display:inline-block;color:#23bbc5;animation:saga-float 1s infinite}
+.saga-shade{position:absolute;inset:0;background:#123f5a66;backdrop-filter:blur(8px);z-index:10;display:grid;place-items:center;padding:24px}
+.saga-mission{position:relative;background:#f8fdfa;color:#315671;width:min(760px,100%);max-height:84dvh;overflow:auto;padding:30px 32px 26px;border:3px solid #a7eee7;border-radius:24px;box-shadow:0 20px 80px #12486244}
+.saga-mission>*{max-width:100%}
+.saga-mission h2{font:800 25px/1.2 'Trebuchet MS',sans-serif;color:#24536a;margin:12px 30px 12px 0}
+.saga-mission p{font-size:15px}
+.saga-close{position:absolute;right:14px;top:14px;background:none;border:0;color:#397587}
+.saga-mission .saga-answer{width:100%;padding:13px 16px;margin:5px 0;text-align:left;background:white;border:2px solid #d4e8e5;border-radius:10px;color:#315671;transition:.15s}
+.saga-mission .saga-answer.selected{border-color:#2eaaa7;background:#dcf7ef}
+.saga-primary,.saga-victory button{padding:12px 22px;background:#237b86;color:white;border:0;border-radius:10px;font-weight:800!important;margin:10px 8px 0 0}
+.saga-feedback{padding:12px 16px;border-radius:10px;background:#e4f4e9;color:#23694a;margin:12px 0}
+.saga-feedback.wrong{background:#fff0e7;color:#a15637}
+.saga-explanation{padding:15px;border:1px solid #beded4;border-radius:12px;font-size:14px;line-height:1.7}
+.saga-chapters{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.saga-chapters button{padding:14px;background:#e8f7f1;border:1px solid #b9dcd3;color:#28566b;border-radius:10px}
+.saga-chapters small{display:block;font-size:10px}
+.saga-victory{text-align:center}
+.saga-victory>svg{color:#c3942f}
+.saga-mission textarea{font-family:monospace!important}
+.saga-mission code{overflow-wrap:anywhere}
+@keyframes saga-float{50%{translate:0 -5px}
+}
+@media(min-width:1000px) and (pointer:fine){.saga-touch{display:none}
+}
+@media(max-width:700px){.saga-hud{display:flex;left:10px;right:10px;top:10px;gap:8px;flex-wrap:wrap}
+.saga-profile{min-width:0;padding-right:12px;gap:6px}
+.saga-profile svg{width:44px;height:44px}
+.saga-profile b{font-size:16px}
+.saga-profile progress{width:90px}
+.saga-stats{order:3;gap:7px}
+.saga-stats span{padding:4px 12px;font-size:15px;border-radius:10px}
+.saga-stats svg{width:17px}
+.saga-stats small{display:none}
+.saga-tools{margin-left:auto}
+.saga-tools button{padding:9px}
+.saga-location{top:135px;left:18px}
+.saga-location p{max-width:260px;font-size:11px}
+.saga-location h1{font-size:30px}
+.saga-quest{left:auto;right:12px;bottom:230px;max-width:180px;padding:10px;font-size:12px}
+.saga-quest strong{font-size:12px}
+.saga-viewport{bottom:70px}
+.saga-bottom{gap:8px;height:60px}
+.saga-bottom>span{display:none}
+.saga-bottom button{padding:6px;font-size:11px}
+.saga-touch{bottom:85px;left:14px;right:14px}
+.saga-dialogue{top:27%;width:94%;grid-template-columns:85px 1fr;gap:10px;padding:15px 12px 8px}
+.saga-guide{height:160px}
+.saga-guide svg{width:125px;min-width:125px;margin-left:-20px;height:220px}
+.saga-dialogue p{font-size:14px;line-height:1.5}
+.saga-speaker{font-size:9px;padding:5px 10px}
+.saga-dialogue-actions{gap:0}
+.saga-dialogue-actions button{font-size:10px;padding:5px}
+.saga-shade{padding:10px}
+.saga-mission{padding:24px 16px;max-height:94dvh}
+.saga-mission h2{font-size:21px}
+.saga-chapters{grid-template-columns:repeat(2,1fr)}
+}
+@media(prefers-reduced-motion:reduce){.saga-token,.saga-indicator{animation:none}
+}
+
+.saga-quest{left:auto;right:28px;bottom:200px}
+.saga-profile progress{appearance:none;border:0;border-radius:5px;overflow:hidden;background:#34728c}
+.saga-profile progress::-webkit-progress-bar{background:#34728c}
+.saga-profile progress::-webkit-progress-value{background:linear-gradient(90deg,#57d8a5,#7cffe1);border-radius:5px}
+.saga-game{font-family:'Outfit','Trebuchet MS',sans-serif}
+.saga-game button{font-family:inherit}
+.saga-speaker{font-family:inherit}
+.saga-platform:not(.saga-ground){height:24px!important;border-bottom:5px solid #9a875d}
+.saga-ground:after{content:'';position:absolute;top:-8px;left:0;right:0;height:14px;background:repeating-linear-gradient(80deg,transparent 0 7px,#6fb655 8px 10px,transparent 11px 19px)}
+@media(max-width:700px){.saga-quest{right:12px;bottom:225px}
+}
+
+.saga-platform.saga-obstacle{height:36px!important;border:3px solid #658a87;border-radius:18px 22px 5px 8px;background:linear-gradient(145deg,#bbdad3,#729e9d);box-shadow:inset 8px 3px #d4eee0}
+.saga-platform.saga-obstacle:before{display:none}
+
+
+.saga-hint{font-size:13px;margin:14px 0;color:#287c85}
+.saga-hint summary{cursor:pointer}
+

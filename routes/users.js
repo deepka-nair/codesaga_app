@@ -22,13 +22,16 @@ const maskEmail = (email) => {
 };
 
 /**
- * Robust secret key for HMAC token signing and verification.
- * Sourced from SESSION_SECRET or JWT_SECRET if present; falls back to a deterministic SHA256
- * derived from MONGODB_URI to preserve validity across server restarts without external dependencies.
+ * HMAC token signing secret.
+ * Production must use a dedicated, high-entropy secret configured by the operator.
+ * A deterministic fallback derived from a database URI or a hard-coded fallback is unsafe.
  */
-const AUTH_SECRET = process.env.SESSION_SECRET || 
-  process.env.JWT_SECRET || 
-  (process.env.MONGODB_URI ? crypto.createHash('sha256').update(process.env.MONGODB_URI + '_codesaga_auth_salt_2026').digest('hex') : 'codesaga_defensive_sec_key_2026_x89a1f');
+const configuredAuthSecret = process.env.SESSION_SECRET || process.env.JWT_SECRET;
+if (process.env.NODE_ENV === 'production' &&
+    (!configuredAuthSecret || configuredAuthSecret.length < 32)) {
+  throw new Error('Production requires SESSION_SECRET (or legacy JWT_SECRET) with at least 32 characters.');
+}
+const AUTH_SECRET = configuredAuthSecret || crypto.randomBytes(32).toString('hex');
 
 /**
  * Create a cryptographically signed, tamper-proof session token (HMAC-SHA256).

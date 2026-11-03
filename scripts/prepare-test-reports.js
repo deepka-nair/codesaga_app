@@ -33,9 +33,11 @@ for (const item of reports) {
 }
 
 if (count === 0) {
-  console.warn("⚠️ Warning: No test reports were found to bundle.");
+  console.error("No current reports were generated.");
+  process.exitCode = 1;
 } else if (count < reports.length) {
-  console.warn(`⚠️ Partial bundle: Preserved ${count}/${reports.length} available test reports in ${targetDir}`);
+  console.error(`Incomplete bundle: ${count}/${reports.length} current reports available in ${targetDir}`);
+  process.exitCode = 1;
 } else {
   console.log(`🎉 Successfully bundled all ${count}/${reports.length} Excel test reports in ${targetDir}`);
 }

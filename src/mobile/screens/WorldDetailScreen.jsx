@@ -381,7 +381,7 @@ export default function WorldDetailScreen({
           {currentMission.conceptExplanation && (
             <View style={styles.conceptCard}>
               <Text style={[styles.conceptTitle, { color: worldConfig.color }]}>
-                📖 BRIEFING & CLUES
+                📖 BRIEFING &amp; CLUES
               </Text>
               {currentMission.conceptExplanation.what && (
                 <Text style={styles.conceptLine}>

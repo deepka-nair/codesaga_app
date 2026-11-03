@@ -22,3 +22,6 @@ android/*.cjs
 android/*.py
 android/*.txt
 
+
+# Runtime evidence is published by GitHub Actions, not source-controlled.
+submission-reports/

@@ -246,7 +246,7 @@ const Profile = () => {
           {/* Top Header Bar */}
           <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <h2 style={{ color: '#E6A93D', margin: 0, fontSize: '1.6rem', fontFamily: 'var(--font-pixel)', textShadow: '2px 2px 0 #000' }}>
+              <h2 data-testid="profile-title" style={{ color: '#E6A93D', margin: 0, fontSize: '1.6rem', fontFamily: 'var(--font-pixel)', textShadow: '2px 2px 0 #000' }}>
                 CODE SAGA CHARACTER SHEET
               </h2>
               <span style={{ fontSize: '0.75rem', color: isGuest ? '#f59e0b' : isDev ? '#06b6d4' : '#A8D5CE', fontFamily: 'var(--font-pixel)' }}>

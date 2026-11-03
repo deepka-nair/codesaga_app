@@ -1,8 +1,8 @@
 import React from 'react';
 
-const PixelPanel = ({ children, className = '', style = {} }) => {
+const PixelPanel = ({ children, className = '', style = {}, ...props }) => {
   return (
-    <div className={`pixel-panel ${className}`} style={style}>
+    <div {...props} className={`pixel-panel ${className}`} style={style}>
       {children}
     </div>
   );

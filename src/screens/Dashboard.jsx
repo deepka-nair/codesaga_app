@@ -152,6 +152,7 @@ const Dashboard = () => {
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <GameHUD />
           <button 
+            data-testid="btn-logout"
             onClick={handleLogout} 
             data-cursor="interaction"
             style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', textDecoration: 'underline', fontSize: '0.8rem', cursor: 'pointer' }}
@@ -165,7 +166,7 @@ const Dashboard = () => {
 
       <section>
         <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{ fontFamily: 'var(--font-pixel)', fontSize: '1.8rem', marginBottom: '0.5rem', color: 'white', textShadow: '2px 2px 0px #000' }}>CHOOSE YOUR WORLD</h1>
+          <h1 data-testid="dashboard-title" style={{ fontFamily: 'var(--font-pixel)', fontSize: '1.8rem', marginBottom: '0.5rem', color: 'white', textShadow: '2px 2px 0px #000' }}>CHOOSE YOUR WORLD</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Select a coding adventure world to begin your detective quests.</p>
         </div>
         
@@ -175,7 +176,7 @@ const Dashboard = () => {
           gap: '1.5rem' 
         }}>
           {worlds.map(world => (
-            <PixelPanel key={world.id} style={{ 
+            <PixelPanel data-testid={`quest-card-${world.id}`} key={world.id} style={{ 
               display: 'flex', 
               flexDirection: 'column', 
               borderTop: `4px solid ${world.color}`,

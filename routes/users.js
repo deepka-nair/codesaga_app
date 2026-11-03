@@ -3,6 +3,11 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import User from '../models/User.js';
+import { emailVerification, validEmail } from '../services/emailVerification.js';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'node:url';
+dotenv.config({ path: fileURLToPath(new URL('../.env', import.meta.url)), quiet: true });
+dotenv.config({ path: fileURLToPath(new URL('../server/.env', import.meta.url)), quiet: true });
 
 const router = express.Router();
 const DEVELOPER_EMAIL = 'deepkav5008.sse@saveetha.com';
@@ -21,20 +26,19 @@ const maskEmail = (email) => {
   return `${local[0]}${'*'.repeat(Math.max(1, local.length - 2))}${local.slice(-1)}@${domain}`;
 };
 
-/**
- * Robust secret key for HMAC token signing and verification.
- * Sourced from SESSION_SECRET or JWT_SECRET if present; falls back to a deterministic SHA256
- * derived from MONGODB_URI to preserve validity across server restarts without external dependencies.
- */
-const AUTH_SECRET = process.env.SESSION_SECRET || 
-  process.env.JWT_SECRET || 
-  (process.env.MONGODB_URI ? crypto.createHash('sha256').update(process.env.MONGODB_URI + '_codesaga_auth_salt_2026').digest('hex') : 'codesaga_defensive_sec_key_2026_x89a1f');
+// Never derive authentication keys from public constants or database credentials.
+const configuredSecret = process.env.SESSION_SECRET || process.env.JWT_SECRET;
+if (process.env.NODE_ENV === 'production' && (!configuredSecret || configuredSecret.length < 32)) {
+  throw new Error('Production requires SESSION_SECRET (or JWT_SECRET) with at least 32 characters.');
+}
+const AUTH_SECRET = configuredSecret || crypto.randomBytes(32).toString('hex');
 
 /**
  * Create a cryptographically signed, tamper-proof session token (HMAC-SHA256).
  */
 export const createAuthToken = (user) => {
   const payload = {
+    type: 'session-v2',
     userId: user.userId || user._id?.toString() || 'USR_UNKNOWN',
     email: normalizeEmail(user.email),
     role: user.role || 'user',
@@ -63,7 +67,7 @@ export const verifyAuthToken = (tokenStr) => {
 
   try {
     const payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
-    if (payload.exp && Date.now() > payload.exp) return null;
+    if (payload.type !== 'session-v2' || !Number.isFinite(payload.exp) || Date.now() >= payload.exp || !validEmail(payload.email)) return null;
     return payload;
   } catch {
     return null;
@@ -146,6 +150,24 @@ export const authRateLimiter = (req, res, next) => {
 
   next();
 };
+
+const verificationService = req => req.app.locals.emailVerification || emailVerification;
+function requireOwnership(req, res, email) {
+  const user = extractAuthUser(req);
+  if (user?.email === email) return true;
+  if (verificationService(req).consume(req.body?.verificationToken, email)) return true;
+  res.status(user ? 403 : 401).json({ success: false, message: 'Verify email ownership or sign in before changing credentials or requesting a session.' });
+  return false;
+}
+router.post('/otp/send', authRateLimiter, async (req, res) => {
+  const result = await verificationService(req).send(req.body?.email);
+  if (result.status === 429) res.setHeader('Retry-After', '60');
+  const { status, ...body } = result; res.status(status).json(body);
+});
+router.post('/otp/verify', authRateLimiter, (req, res) => {
+  const { status, ...body } = verificationService(req).verify(req.body?.email, req.body?.code);
+  res.status(status).json(body);
+});
 
 /**
  * Strict schema & range validation for progress update payloads
@@ -300,14 +322,10 @@ router.get('/:email', async (req, res) => {
       return res.json({ success: true, exists: false, hasPassword: false });
     }
 
-    // Developer role enforcement
-    if (cleanEmail === DEVELOPER_EMAIL && user.role !== 'developer') {
-      user.role = 'developer';
-      await user.save();
-    }
-
     const hasPassword = Boolean(user.password_hash);
-    const userObj = user.toObject();
+    const caller = extractAuthUser(req);
+    const canReadAccount = caller && (caller.email === cleanEmail || caller.role === 'developer');
+    const userObj = canReadAccount ? user.toObject() : { email: cleanEmail };
     delete userObj.password_hash;
 
     return res.json({
@@ -325,7 +343,7 @@ router.get('/:email', async (req, res) => {
  * POST /api/users
  * Create/register new user in codesaga_users collection with optional password_hash
  */
-router.post('/', async (req, res) => {
+router.post('/', authRateLimiter, async (req, res) => {
   try {
     const { email, username, password } = req.body;
     const cleanEmail = normalizeEmail(email);
@@ -336,6 +354,9 @@ router.post('/', async (req, res) => {
     }
 
     console.log(`[MongoDB User Registration] Request for: ${maskEmail(cleanEmail)}`);
+
+    if (!validEmail(cleanEmail)) return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
+    if (!requireOwnership(req, res, cleanEmail)) return;
 
     if (mongoose.connection.readyState !== 1) {
       console.warn('[MongoDB User Registration] Database not connected.');
@@ -446,6 +467,9 @@ router.post('/set-password', authRateLimiter, async (req, res) => {
     if (!passVal.valid) {
       return res.status(400).json({ success: false, message: passVal.message });
     }
+
+    if (!validEmail(cleanEmail)) return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
+    if (!requireOwnership(req, res, cleanEmail)) return;
 
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ success: false, message: 'Database temporarily unavailable.' });
@@ -568,7 +592,7 @@ router.post('/login-password', authRateLimiter, async (req, res) => {
  * POST /api/users/login
  * Record user login timestamp in MongoDB
  */
-router.post('/login', async (req, res) => {
+router.post('/login', authRateLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     const cleanEmail = normalizeEmail(email);
@@ -578,6 +602,9 @@ router.post('/login', async (req, res) => {
     }
 
     console.log(`[MongoDB User Login] Record login for: ${maskEmail(cleanEmail)}`);
+
+    if (!validEmail(cleanEmail)) return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
+    if (!requireOwnership(req, res, cleanEmail)) return;
 
     if (mongoose.connection.readyState !== 1) {
       return res.json({ success: true, offline: true });

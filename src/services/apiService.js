@@ -1,3 +1,4 @@
+import { takeEmailVerificationToken } from './otpService';
 /**
  * CodeSaga Frontend API Service
  * -------------------------------------------------------------
@@ -65,7 +66,7 @@ export async function getUserFromApi(email) {
   }
 
   try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}`);
+    const res = await fetchWithRetry(`${API_BASE_URL}/api/users/${encodeURIComponent(cleanEmail)}`, { headers: getAuthHeaders() });
     if (!res.ok) {
       throw new Error(`API responded with status ${res.status}`);
     }
@@ -90,7 +91,7 @@ export async function registerUserInApi(email, username, role = 'user', password
     const res = await fetchWithRetry(`${API_BASE_URL}/api/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: cleanEmail, username, role, password })
+      body: JSON.stringify({ email: cleanEmail, username, role, password, verificationToken: takeEmailVerificationToken(cleanEmail) })
     });
     const data = await res.json();
     if (!res.ok) {
@@ -156,8 +157,8 @@ export async function setPasswordApi(email, password) {
   try {
     const res = await fetchWithRetry(`${API_BASE_URL}/api/users/set-password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: cleanEmail, password })
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ email: cleanEmail, password, verificationToken: takeEmailVerificationToken(cleanEmail) })
     });
     const data = await res.json();
     if (!res.ok) {
@@ -185,8 +186,8 @@ export async function recordUserLoginInApi(email) {
   try {
     const res = await fetchWithRetry(`${API_BASE_URL}/api/users/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: cleanEmail })
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ email: cleanEmail, verificationToken: takeEmailVerificationToken(cleanEmail) })
     });
     if (!res.ok) {
       throw new Error(`API responded with status ${res.status}`);
